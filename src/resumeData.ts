@@ -46,8 +46,8 @@ export const resumeData: ResumeDataType = {
     email: "sohelsilamblg01@gmail.com",
     phone: "+91 70733 67227",
     location: "West Bengal, India",
-    linkedin: "https://www.linkedin.com/in/sohail-islam-64775335b/",
-    github: "https://github.com/sohail22dec",
+    linkedin: "https://www.linkedin.com/in/heysohail22",
+    github: "https://github.com/heysohail22",
   },
   summary:
     "AI Engineer focused on solving business problems through production-grade agentic architectures and reliable RAG pipelines. Skilled at turning complex workflows into deterministic, guardrailed systems that cut operational costs and deliver fast, trustworthy AI solutions.",
