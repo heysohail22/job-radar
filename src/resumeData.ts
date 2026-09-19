@@ -44,7 +44,7 @@ export const resumeData: ResumeDataType = {
   title: "AI Engineer | Agentic Systems & LLMs",
   contact: {
     email: "sohelsilamblg01@gmail.com",
-    phone: "+91 70733 67227",
+    phone: "+91 7063357227",
     location: "West Bengal, India",
     linkedin: "https://www.linkedin.com/in/heysohail22",
     github: "https://github.com/heysohail22",
