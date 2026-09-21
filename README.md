@@ -80,4 +80,4 @@ pnpm build
 
 ## 📄 License
 
-MIT License. Developed by **Sohail Islam** ([sohail22dec](https://github.com/sohail22dec)).
+MIT License. Developed by **Sohail Islam** ([heysohil22](https://github.com/heysohail22)).
