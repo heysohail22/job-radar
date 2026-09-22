@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --bg-main: #080F18;
+  --bg-sidebar: #080820;
+  --bg-card: #101828;
+  --bg-card-secondary: #181F30;
+  --border-slate: #232B3B;
+  --primary-indigo: #4F46E5;
+  --primary-purple: #6366F1;
+  --purple-glow: #7C3AED;
+  --match-emerald: #10B981;
+  --match-glow: #34D399;
+  --text-main: #F8F8F8;
+  --text-secondary: #AAB4C5;
+  --text-muted: #667085;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #080F18;
+  color: #F8F8F8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  overflow: hidden;
 }
+
+/* Magic UI Glow & Highlight Utilities */
+.magic-glow-border {
+  position: relative;
+  border: 1px solid #6366F1;
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.25), inset 0 0 12px rgba(124, 58, 237, 0.12);
+}
+
+.magic-emerald-glow {
+  box-shadow: 0 0 14px rgba(52, 211, 153, 0.35);
+}
+
+.magic-purple-glow {
+  box-shadow: 0 0 18px rgba(124, 58, 237, 0.4);
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #A855F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+

@@ -1,95 +1,108 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Sidebar, type NavTab } from "../components/Sidebar";
 import { Header } from "../components/Header";
 import { JobsFeed } from "../components/JobsFeed";
 import { JobDetailPane } from "../components/JobDetailPane";
 import { ResumeView } from "../components/ResumeView";
-import { MOCK_JOBS, type JobMatchItem } from "../lib/mockJobs";
+import { Sparkles } from "lucide-react";
+import type { JobPostingItem } from "../lib/mockJobs";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<NavTab>("jobs");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [locationFilter, setLocationFilter] = useState<string>("Anywhere");
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [activePillFilter, setActivePillFilter] = useState<string>("all");
-  const [selectedJob, setSelectedJob] = useState<JobMatchItem>(MOCK_JOBS[0]);
-  const [bookmarkedJobIds, setBookmarkedJobIds] = useState<string[]>(["job-1"]);
+  const [jobs, setJobs] = useState<JobPostingItem[]>([]);
+  const [selectedJob, setSelectedJob] = useState<JobPostingItem | null>(null);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
 
-  // Filter Jobs
+  // Attempt live sync with backend FastAPI (/api/jobs) on load
+  const loadJobsFromBackend = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/jobs");
+      if (res.ok) {
+        const liveData = await res.json();
+        if (Array.isArray(liveData) && liveData.length > 0) {
+          setJobs(liveData);
+          setSelectedJob((prev) => prev || liveData[0]);
+        }
+      }
+    } catch {
+      // Backend offline or local dev
+    }
+  };
+
+  useEffect(() => {
+    loadJobsFromBackend();
+  }, []);
+
+  // Trigger live ATS scraper
+  const handleScanLive = async () => {
+    setIsScanning(true);
+    try {
+      const res = await fetch("http://localhost:8000/api/jobs?force_live=true");
+      if (res.ok) {
+        const liveData = await res.json();
+        if (Array.isArray(liveData) && liveData.length > 0) {
+          setJobs(liveData);
+          setSelectedJob(liveData[0]);
+        }
+      }
+    } catch (err) {
+      console.error("Live scan failed:", err);
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  // Filter Jobs based on actual ATS fields (title, location, techStack)
   const filteredJobs = useMemo(() => {
-    return MOCK_JOBS.filter((job) => {
-      // Tab filter
-      if (activeTab === "saved" && !bookmarkedJobIds.includes(job.id)) {
+    return jobs.filter((job) => {
+      if (activePillFilter === "internship" && !job.isInternship && !job.title.toLowerCase().includes("intern")) {
         return false;
       }
-
-      // Pill filter
-      if (activePillFilter === "internship" && !job.tags.some((t) => t.toLowerCase().includes("intern"))) {
+      if (
+        activePillFilter === "genai" &&
+        !job.title.toLowerCase().includes("ai") &&
+        !job.techStack.some((t) => t.toLowerCase().includes("ai") || t.toLowerCase().includes("llm"))
+      ) {
         return false;
       }
-      if (activePillFilter === "genai" && !job.role.toLowerCase().includes("genai") && !job.tags.some((t) => t.toLowerCase().includes("ai") || t.toLowerCase().includes("llm"))) {
-        return false;
-      }
-      if (activePillFilter === "remote" && !job.isRemote) {
+      if (activePillFilter === "remote" && !job.location.toLowerCase().includes("remote")) {
         return false;
       }
       if (activePillFilter === "india" && !job.location.toLowerCase().includes("india")) {
         return false;
       }
-
-      // Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchTitle = job.role.toLowerCase().includes(q);
-        const matchComp = job.company.toLowerCase().includes(q);
-        const matchDesc = job.description.toLowerCase().includes(q);
-        const matchTag = job.tags.some((t) => t.toLowerCase().includes(q));
-        if (!matchTitle && !matchComp && !matchDesc && !matchTag) return false;
-      }
-
-      // Location Filter
-      if (locationFilter !== "Anywhere") {
-        if (locationFilter === "Remote" && !job.isRemote) return false;
-        if (locationFilter === "India" && !job.location.toLowerCase().includes("india")) return false;
-      }
-
       return true;
     });
-  }, [activeTab, activePillFilter, searchQuery, locationFilter, bookmarkedJobIds]);
-
-  const handleToggleBookmark = (jobId: string) => {
-    setBookmarkedJobIds((prev) =>
-      prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId]
-    );
-  };
+  }, [jobs, activePillFilter]);
 
   const handleTailorResume = (_jobDesc: string) => {
     setActiveTab("resume");
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0B0E14] text-slate-100 font-sans antialiased">
-      {/* 1. Left Sidebar */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased select-none">
+      {/* 1. Left Collapsible Sidebar with close button */}
       <Sidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        savedCount={bookmarkedJobIds.length}
       />
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
-        {/* Top Header */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {/* Top Header with Sidebar Toggle Button */}
         <Header
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          locationFilter={locationFilter}
-          onLocationChange={setLocationFilter}
-          onSearchSubmit={() => {}}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
         />
 
         {/* Dynamic Body Pane */}
-        <main className="flex-1 flex h-[calc(100vh-64px)] overflow-hidden">
+        <main className="flex-1 flex h-[calc(100vh-56px)] overflow-hidden">
           {activeTab === "resume" ? (
             <ResumeView onGoToJobFinder={() => setActiveTab("jobs")} />
           ) : (
@@ -101,18 +114,26 @@ export default function Home() {
                 onSelectJob={setSelectedJob}
                 activeFilter={activePillFilter}
                 onFilterChange={setActivePillFilter}
-                bookmarkedJobIds={bookmarkedJobIds}
-                onToggleBookmark={handleToggleBookmark}
+                onScanLive={handleScanLive}
+                isScanning={isScanning}
               />
 
               {/* Right Detail Pane */}
-              {selectedJob && (
+              {selectedJob ? (
                 <JobDetailPane
                   job={selectedJob}
-                  isBookmarked={bookmarkedJobIds.includes(selectedJob.id)}
-                  onToggleBookmark={() => handleToggleBookmark(selectedJob.id)}
                   onTailorResume={handleTailorResume}
                 />
+              ) : (
+                <div className="w-[420px] border-l border-[#232B3B] bg-[#080F18] h-full flex flex-col items-center justify-center p-8 text-center text-[#AAB4C5] space-y-3 shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-[#101828] border border-[#232B3B] flex items-center justify-center text-[#6366F1]">
+                    <Sparkles size={20} />
+                  </div>
+                  <h3 className="font-extrabold text-sm text-[#F8F8F8]">No Job Selected</h3>
+                  <p className="text-xs text-[#667085] leading-relaxed max-w-[260px]">
+                    Scan or select an opportunity from the radar to view AI match breakdown and tailor your resume.
+                  </p>
+                </div>
               )}
             </>
           )}
@@ -121,3 +142,4 @@ export default function Home() {
     </div>
   );
 }
+

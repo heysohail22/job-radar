@@ -63,13 +63,12 @@ def filter_node(state: JobRadarState) -> Dict[str, Any]:
 
 # Build LangGraph State Machine
 builder = StateGraph(JobRadarState)
-builder.add_node("load_curated", load_curated_node)
 builder.add_node("fetch_live", fetch_live_node)
 builder.add_node("filter_jobs", filter_node)
 
-builder.set_entry_point("load_curated")
-builder.add_edge("load_curated", "fetch_live")
+builder.set_entry_point("fetch_live")
 builder.add_edge("fetch_live", "filter_jobs")
 builder.add_edge("filter_jobs", END)
 
 job_radar_graph = builder.compile()
+
