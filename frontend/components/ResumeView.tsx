@@ -19,20 +19,20 @@ export const ResumeView: React.FC<ResumeViewProps> = ({ onGoToJobFinder }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   return (
-    <div className="flex-1 h-full overflow-y-auto p-6 max-w-4xl mx-auto space-y-6 text-left bg-[#080F18]">
+    <div className="flex-1 h-full overflow-y-auto p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6 text-left bg-[#080F18]">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-black text-[#F8F8F8] tracking-tight">My Resume</h2>
-        <p className="text-xs text-[#AAB4C5] font-medium pt-1">
+        <h2 className="text-xl sm:text-2xl font-black text-[#F8F8F8] tracking-tight">My Resume</h2>
+        <p className="text-xs text-[#AAB4C5] font-medium pt-0.5 sm:pt-1">
           Review, benchmark, and tailor your resume for maximum GenAI interview callback rates.
         </p>
       </div>
 
       {/* Resume File Card */}
-      <div className="p-5 rounded-2xl bg-[#101828] border border-[#232B3B] space-y-4 shadow-xs">
-        <div className="flex items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#101828] border border-[#232B3B] space-y-3.5 sm:space-y-4 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center font-black text-xs">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center font-black text-xs shrink-0">
               PDF
             </div>
             <div>
@@ -43,7 +43,7 @@ export const ResumeView: React.FC<ResumeViewProps> = ({ onGoToJobFinder }) => {
 
           <button
             onClick={() => window.print()}
-            className="py-2 px-3.5 rounded-xl bg-[#181F30] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:bg-[#232B3B] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+            className="py-2 px-3.5 rounded-xl bg-[#181F30] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:bg-[#232B3B] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
           >
             <Download size={14} />
             <span>Export PDF</span>
@@ -51,7 +51,7 @@ export const ResumeView: React.FC<ResumeViewProps> = ({ onGoToJobFinder }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-1">
           <button
             onClick={() => window.print()}
             className="py-2.5 px-4 rounded-xl bg-[#181F30] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:bg-[#232B3B] text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"

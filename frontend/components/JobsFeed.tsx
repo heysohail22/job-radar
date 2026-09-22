@@ -41,29 +41,29 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   ];
 
   return (
-    <div className="flex-1 h-full overflow-y-auto p-6 space-y-6 text-left bg-[#080F18]">
+    <div className="flex-1 h-full overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 text-left bg-[#080F18]">
       {/* Feed Header */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-black text-[#F8F8F8] tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-[#F8F8F8] tracking-tight">
             Jobs for{" "}
             <span className="bg-gradient-to-r from-[#6366F1] via-[#7C3AED] to-[#A855F7] bg-clip-text text-transparent">
               You
             </span>
           </h2>
-          <p className="text-xs text-[#AAB4C5] font-medium pt-1">
+          <p className="text-xs text-[#AAB4C5] font-medium pt-0.5 sm:pt-1">
             Real GenAI roles scraped directly from live ATS feeds.
           </p>
         </div>
 
         {/* Live Status & Scan Triggers */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {/* Primary Backend Fetch Button */}
           {onFetchJobs && (
             <button
               onClick={onFetchJobs}
               disabled={isFetching || isScanning}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] border border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-md shadow-[#4F46E5]/25 active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] border border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-md shadow-[#4F46E5]/25 active:scale-95"
               title="Fetch latest jobs from FastAPI backend and save to local storage"
             >
               {isFetching ? (
@@ -71,7 +71,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
               ) : (
                 <RefreshCw size={13} className="text-[#F8F8F8]" />
               )}
-              <span>{isFetching ? "Fetching..." : "Fetch New Jobs"}</span>
+              <span>{isFetching ? "Fetching..." : "Fetch Jobs"}</span>
             </button>
           )}
 
@@ -80,11 +80,11 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
             <button
               onClick={onOpenFirecrawl}
               disabled={isScanning || isFetching}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5722]/20 to-[#4F46E5]/20 hover:from-[#FF5722]/30 hover:to-[#4F46E5]/30 border border-[#FF5722]/40 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5722]/20 to-[#4F46E5]/20 hover:from-[#FF5722]/30 hover:to-[#4F46E5]/30 border border-[#FF5722]/40 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
               title="Scrape YC & Startup career portals using Firecrawl"
             >
               <Flame size={13} className="text-[#FF5722]" />
-              <span className="hidden sm:inline">Fetch with Firecrawl</span>
+              <span>Firecrawl</span>
             </button>
           )}
 
@@ -93,7 +93,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
             <button
               onClick={onScanLive}
               disabled={isScanning || isFetching}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#101828] hover:bg-[#181F30] border border-[#232B3B] hover:border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#101828] hover:bg-[#181F30] border border-[#232B3B] hover:border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
               title="Scan Greenhouse, Lever, and Ashby"
             >
               {isScanning ? (
@@ -101,11 +101,11 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
               ) : (
                 <Radar size={13} className="text-[#6366F1]" />
               )}
-              <span className="hidden sm:inline">{isScanning ? "Scanning..." : "Scan ATS"}</span>
+              <span>{isScanning ? "Scanning..." : "Scan ATS"}</span>
             </button>
           )}
 
-          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#101828] border border-[#232B3B] text-xs">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#101828] border border-[#232B3B] text-xs">
             <div className={`w-2 h-2 rounded-full ${jobs.length > 0 ? "bg-[#10B981] animate-pulse" : "bg-[#667085]"}`} />
             <span className="font-bold text-[#F8F8F8]">{jobs.length} local</span>
           </div>
@@ -123,8 +123,8 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
       </div>
 
       {/* Filter Row */}
-      <div className="flex items-center justify-between gap-3 overflow-x-auto scrollbar-none pt-1">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-1">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 sm:pb-0 scrollbar-none -mx-1 px-1">
           {filterPills.map((pill) => {
             const isActive = activeFilter === pill.id;
             return (
@@ -132,7 +132,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
                 key={pill.id}
                 onClick={() => onFilterChange(pill.id)}
                 className={`
-                  px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer
+                  px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0
                   ${isActive
                     ? "bg-[#4F46E5] text-[#F8F8F8] shadow-xs"
                     : "bg-[#101828] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:bg-[#181F30]"
@@ -145,8 +145,8 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
           })}
         </div>
 
-        <div className="flex items-center gap-1 text-xs text-[#AAB4C5] shrink-0 font-semibold cursor-pointer pr-1">
-          <span>Sort by:</span>
+        <div className="flex items-center gap-1 text-xs text-[#AAB4C5] shrink-0 font-semibold cursor-pointer self-end sm:self-auto pr-1">
+          <span>Sort:</span>
           <span className="text-[#F8F8F8] font-bold flex items-center gap-0.5">
             Best Match <ChevronDown size={14} />
           </span>

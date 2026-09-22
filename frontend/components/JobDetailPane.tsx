@@ -6,6 +6,7 @@ import {
   Clock,
   Globe2,
   CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos";
 import type { JobPostingItem } from "../lib/types";
@@ -13,11 +14,13 @@ import type { JobPostingItem } from "../lib/types";
 interface JobDetailPaneProps {
   job: JobPostingItem;
   onTailorResume: (jobDescription: string) => void;
+  onBack?: () => void;
 }
 
 export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
   job,
   onTailorResume,
+  onBack,
 }) => {
   // Circular stroke calculation for Donut Chart
   const radius = 38;
@@ -25,7 +28,17 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
   const strokeDashoffset = circumference - (job.matchScore / 100) * circumference;
 
   return (
-    <div className="w-[420px] border-l border-[#232B3B] bg-[#080F18] h-full overflow-y-auto p-5 space-y-4 text-left shrink-0">
+    <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[460px] md:border-l border-[#232B3B] bg-[#080F18] h-full overflow-y-auto p-4 sm:p-5 space-y-4 text-left shrink-0">
+      {/* Mobile Back to Jobs Button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-[#101828] border border-[#232B3B] text-xs font-bold text-[#AAB4C5] hover:text-[#F8F8F8] active:scale-95 transition-all cursor-pointer w-fit shadow-xs"
+        >
+          <ArrowLeft size={15} />
+          <span>← Back to Jobs</span>
+        </button>
+      )}
       {/* Header Info Card */}
       <div className="p-4 rounded-2xl bg-[#101828] border border-[#232B3B] space-y-3.5 shadow-xs">
         <div className="flex items-start justify-between gap-3">

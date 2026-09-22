@@ -6,14 +6,15 @@ import { Header } from "../components/Header";
 import { JobsFeed } from "../components/JobsFeed";
 import { JobDetailPane } from "../components/JobDetailPane";
 import { ResumeView } from "../components/ResumeView";
-import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle, Home as HomeIcon, FileText } from "lucide-react";
 import type { JobPostingItem } from "../lib/types";
 
 const STORAGE_KEY = "jobmatch_radar_jobs";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<NavTab>("jobs");
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [activePillFilter, setActivePillFilter] = useState<string>("all");
   const [jobs, setJobs] = useState<JobPostingItem[]>([]);
   const [selectedJob, setSelectedJob] = useState<JobPostingItem | null>(null);
@@ -23,6 +24,13 @@ export default function Home() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+
+  // Set sidebar open by default only on desktop
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+      setIsSidebarOpen(true);
+    }
+  }, []);
 
   // Firecrawl modal state
   const [isFirecrawlOpen, setIsFirecrawlOpen] = useState<boolean>(false);
@@ -250,18 +258,27 @@ export default function Home() {
     });
   }, [jobs, activePillFilter]);
 
+  const handleSelectJob = (job: JobPostingItem) => {
+    setSelectedJob(job);
+    setIsMobileDetailOpen(true);
+  };
+
   const handleTailorResume = (_jobDesc: string) => {
     setActiveTab("resume");
+    setIsMobileDetailOpen(false);
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased select-none relative">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased relative">
       {/* 1. Left Collapsible Sidebar with close button */}
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          setIsMobileDetailOpen(false);
+        }}
       />
 
       {/* 2. Main Content Area */}
@@ -273,46 +290,96 @@ export default function Home() {
         />
 
         {/* Dynamic Body Pane */}
-        <main className="flex-1 flex h-[calc(100vh-56px)] overflow-hidden">
+        <main className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
           {activeTab === "resume" ? (
-            <ResumeView onGoToJobFinder={() => setActiveTab("jobs")} />
+            <ResumeView
+              onGoToJobFinder={() => {
+                setActiveTab("jobs");
+                setIsMobileDetailOpen(false);
+              }}
+            />
           ) : (
             <>
-              {/* Center Feed */}
-              <JobsFeed
-                jobs={filteredJobs}
-                selectedJobId={selectedJob?.id || ""}
-                onSelectJob={setSelectedJob}
-                activeFilter={activePillFilter}
-                onFilterChange={setActivePillFilter}
-                onFetchJobs={() => fetchBackendJobs({ silent: false })}
-                isFetching={isFetchingBackend}
-                onScanLive={handleScanLive}
-                onOpenFirecrawl={() => setIsFirecrawlOpen(true)}
-                isScanning={isScanning}
-                onClearLocalJobs={handleClearLocalJobs}
-              />
-
-              {/* Right Detail Pane */}
-              {selectedJob ? (
-                <JobDetailPane
-                  job={selectedJob}
-                  onTailorResume={handleTailorResume}
+              {/* Center Feed: Visible on desktop always, or on mobile when detail pane is NOT active */}
+              <div
+                className={`flex-1 h-full overflow-hidden ${
+                  isMobileDetailOpen ? "hidden md:flex" : "flex"
+                }`}
+              >
+                <JobsFeed
+                  jobs={filteredJobs}
+                  selectedJobId={selectedJob?.id || ""}
+                  onSelectJob={handleSelectJob}
+                  activeFilter={activePillFilter}
+                  onFilterChange={setActivePillFilter}
+                  onFetchJobs={() => fetchBackendJobs({ silent: false })}
+                  isFetching={isFetchingBackend}
+                  onScanLive={handleScanLive}
+                  onOpenFirecrawl={() => setIsFirecrawlOpen(true)}
+                  isScanning={isScanning}
+                  onClearLocalJobs={handleClearLocalJobs}
                 />
-              ) : (
-                <div className="w-[420px] border-l border-[#232B3B] bg-[#080F18] h-full flex flex-col items-center justify-center p-8 text-center text-[#AAB4C5] space-y-3 shrink-0">
-                  <div className="w-12 h-12 rounded-2xl bg-[#101828] border border-[#232B3B] flex items-center justify-center text-[#6366F1]">
-                    <Sparkles size={20} />
+              </div>
+
+              {/* Right Detail Pane: Visible on desktop always (or placeholder), and on mobile when a job is selected */}
+              <div
+                className={`h-full ${
+                  isMobileDetailOpen ? "flex w-full" : "hidden md:flex"
+                } md:w-auto overflow-hidden`}
+              >
+                {selectedJob ? (
+                  <JobDetailPane
+                    job={selectedJob}
+                    onTailorResume={handleTailorResume}
+                    onBack={() => setIsMobileDetailOpen(false)}
+                  />
+                ) : (
+                  <div className="hidden md:flex w-[380px] lg:w-[420px] border-l border-[#232B3B] bg-[#080F18] h-full flex-col items-center justify-center p-8 text-center text-[#AAB4C5] space-y-3 shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-[#101828] border border-[#232B3B] flex items-center justify-center text-[#6366F1]">
+                      <Sparkles size={20} />
+                    </div>
+                    <h3 className="font-extrabold text-sm text-[#F8F8F8]">No Job Selected</h3>
+                    <p className="text-xs text-[#667085] leading-relaxed max-w-[260px]">
+                      Fetch or select an opportunity from the radar to view AI match breakdown and tailor your resume.
+                    </p>
                   </div>
-                  <h3 className="font-extrabold text-sm text-[#F8F8F8]">No Job Selected</h3>
-                  <p className="text-xs text-[#667085] leading-relaxed max-w-[260px]">
-                    Fetch or select an opportunity from the radar to view AI match breakdown and tailor your resume.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
         </main>
+
+        {/* 3. Mobile Bottom Navigation Bar */}
+        <nav className="md:hidden h-14 border-t border-[#232B3B] bg-[#080820]/95 backdrop-blur-md flex items-center justify-around px-4 shrink-0 z-20">
+          <button
+            onClick={() => {
+              setActiveTab("jobs");
+              setIsMobileDetailOpen(false);
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 px-4 rounded-xl transition-all cursor-pointer ${
+              activeTab === "jobs"
+                ? "text-[#6366F1] font-bold"
+                : "text-[#AAB4C5] hover:text-[#F8F8F8]"
+            }`}
+          >
+            <HomeIcon size={18} />
+            <span className="text-[10px]">Jobs Radar</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("resume");
+              setIsMobileDetailOpen(false);
+            }}
+            className={`flex flex-col items-center justify-center gap-1 py-1 px-4 rounded-xl transition-all cursor-pointer ${
+              activeTab === "resume"
+                ? "text-[#6366F1] font-bold"
+                : "text-[#AAB4C5] hover:text-[#F8F8F8]"
+            }`}
+          >
+            <FileText size={18} />
+            <span className="text-[10px]">My Resume</span>
+          </button>
+        </nav>
       </div>
 
       {/* Toast / Notification Banner */}
@@ -341,8 +408,8 @@ export default function Home() {
 
       {/* Firecrawl Scraper Modal */}
       {isFirecrawlOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md rounded-2xl bg-[#101828] border border-[#232B3B] p-6 space-y-5 shadow-2xl text-left">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md rounded-2xl bg-[#101828] border border-[#232B3B] p-5 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl text-left max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-[#FF5722]/15 text-[#FF5722] flex items-center justify-center">

@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { MapPin, Clock, ChevronRight, Globe2 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos";
 import type { JobPostingItem } from "../lib/types";
@@ -16,12 +15,12 @@ export const JobCard: React.FC<JobCardProps> = ({
   onSelect,
 }) => {
   return (
-    <motion.div
-      layout
-      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+    <div
       onClick={onSelect}
+      role="button"
+      tabIndex={0}
       className={`
-        p-4 rounded-2xl border transition-all duration-200 cursor-pointer text-left relative group
+        p-4 rounded-2xl border transition-all duration-150 cursor-pointer text-left relative group active:scale-[0.99] hover:-translate-y-0.5
         ${
           isSelected
             ? "bg-[#101828] border-[#6366F1] shadow-lg shadow-[#6366F1]/15 ring-1 ring-[#6366F1]/40 magic-glow-border"
@@ -30,13 +29,13 @@ export const JobCard: React.FC<JobCardProps> = ({
       `}
     >
       {/* Top Header: Logo + Title + Match Score */}
-      <div className="flex items-start justify-between gap-3 mb-2.5">
-        <div className="flex items-center gap-3">
-          <CompanyLogo name={job.company} className="w-11 h-11" />
-          <div>
+      <div className="flex items-start justify-between gap-2.5 mb-2.5">
+        <div className="flex items-start gap-2.5 sm:gap-3 flex-1 min-w-0">
+          <CompanyLogo name={job.company} className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
             <h3 className="font-extrabold text-sm text-[#F8F8F8] flex items-center gap-1 group-hover:text-[#6366F1] transition-colors">
-              <span>{job.title}</span>
-              <ChevronRight size={14} className="text-[#667085]" />
+              <span className="truncate">{job.title}</span>
+              <ChevronRight size={14} className="text-[#667085] shrink-0" />
             </h3>
             <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
               <p className="text-xs text-[#AAB4C5] font-semibold">{job.company}</p>
@@ -60,10 +59,10 @@ export const JobCard: React.FC<JobCardProps> = ({
         </div>
 
         {/* Match Score Badge with Emerald Glow */}
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-full text-xs font-black tracking-tight bg-[#10B981]/15 border border-[#10B981]/40 text-[#34D399] flex items-center gap-1 shadow-xs">
+        <div className="shrink-0">
+          <span className="px-2 sm:px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-black tracking-tight bg-[#10B981]/15 border border-[#10B981]/40 text-[#34D399] flex items-center gap-1 shadow-xs whitespace-nowrap">
             <span>🏆</span>
-            <span>{job.matchScore}% Match</span>
+            <span>{job.matchScore}%</span>
           </span>
         </div>
       </div>
@@ -104,7 +103,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           <span>{job.source}</span>
         </span>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
