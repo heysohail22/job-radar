@@ -8,7 +8,7 @@ import { ResumeDocument } from "./components/ResumeDocument";
 import type { SpacingConfig } from "./components/SpacingControls";
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<"ai" | "edit">("ai");
+  const [activeTab, setActiveTab] = useState<"ai" | "edit" | "jobs">("jobs");
 
   // Sidebar toggle state
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
@@ -91,12 +91,23 @@ export function App() {
   const [isTailored, setIsTailored] = useState<boolean>(false);
   const [tailoredRole, setTailoredRole] = useState<string>("");
 
-  // API Key State
+  // API Keys & Job Bookmarks State
   const [userGroqKey, setUserGroqKey] = useState<string>(() => {
     return localStorage.getItem("groq_api_key") || "";
   });
   const [userGeminiKey, setUserGeminiKey] = useState<string>(() => {
     return localStorage.getItem("gemini_api_key") || "";
+  });
+  const [userFirecrawlKey, setUserFirecrawlKey] = useState<string>(() => {
+    return localStorage.getItem("firecrawl_api_key") || import.meta.env.VITE_FIRECRAWL_API_KEY || "fc-f4adcf4a4f86405689ff0e21f69a54ea";
+  });
+  const [savedBookmarkIds, setSavedBookmarkIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("saved_job_bookmarks");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   const hasEnvGroq = Boolean(import.meta.env.VITE_GROQ_API_KEY);
@@ -110,6 +121,29 @@ export function App() {
   const handleSaveGeminiKey = (key: string) => {
     setUserGeminiKey(key);
     localStorage.setItem("gemini_api_key", key);
+  };
+
+  const handleSaveFirecrawlKey = (key: string) => {
+    setUserFirecrawlKey(key);
+    localStorage.setItem("firecrawl_api_key", key);
+  };
+
+  const handleToggleBookmark = (jobId: string) => {
+    setSavedBookmarkIds((prev) => {
+      const next = prev.includes(jobId) ? prev.filter((id) => id !== jobId) : [...prev, jobId];
+      try {
+        localStorage.setItem("saved_job_bookmarks", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const handleSelectJobForTailoring = (jd: string) => {
+    setJobDescription(jd);
+    setActiveTab("ai");
+    setIsSidebarOpen(true);
   };
 
   // Sync Master Resume with LocalStorage
@@ -273,6 +307,8 @@ export function App() {
           onSaveGroqKey={handleSaveGroqKey}
           userGeminiKey={userGeminiKey}
           onSaveGeminiKey={handleSaveGeminiKey}
+          userFirecrawlKey={userFirecrawlKey}
+          onSaveFirecrawlKey={handleSaveFirecrawlKey}
           hasEnvGroq={hasEnvGroq}
           hasEnvGemini={hasEnvGemini}
           jobDescription={jobDescription}
@@ -285,6 +321,9 @@ export function App() {
           onResetResume={handleResetResume}
           resume={activeResume}
           onChangeResume={updateResume}
+          onSelectJobForTailoring={handleSelectJobForTailoring}
+          savedBookmarkIds={savedBookmarkIds}
+          onToggleBookmark={handleToggleBookmark}
         />
 
         {/* Live Resume Preview Document */}
@@ -302,3 +341,4 @@ export function App() {
 }
 
 export default App;
+

@@ -26,6 +26,17 @@ import {
   Wrench,
   Rocket,
   User,
+  Target,
+  Flame,
+  Bookmark,
+  Building,
+  Briefcase,
+  Key,
+  Search,
+  Filter,
+  CheckCircle2,
+  Clock,
+  Zap,
 } from "lucide-react";
 
 // Brand icons from react-icons/fa6
@@ -64,3 +75,15 @@ export const GraduationCapIcon = GraduationCap;
 export const WrenchIcon = Wrench;
 export const RocketIcon = Rocket;
 export const UserIcon = User;
+export const TargetIcon = Target;
+export const FlameIcon = Flame;
+export const BookmarkIcon = Bookmark;
+export const BuildingIcon = Building;
+export const BriefcaseIcon = Briefcase;
+export const KeyIcon = Key;
+export const SearchIcon = Search;
+export const FilterIcon = Filter;
+export const CheckCircleIcon = CheckCircle2;
+export const ClockIcon = Clock;
+export const ZapIcon = Zap;
+

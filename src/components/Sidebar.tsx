@@ -1,14 +1,15 @@
 import React from "react";
 import type { ResumeDataType } from "../resumeData";
-import { SparklesIcon, Edit3Icon, ChevronLeftIcon } from "../icons";
+import { SparklesIcon, Edit3Icon, ChevronLeftIcon, TargetIcon } from "../icons";
 import { AiTailorPanel } from "./AiTailorPanel";
 import { ResumeEditorPanel } from "../ResumeEditorPanel";
+import { JobRadarPanel } from "./JobRadarPanel";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  activeTab: "ai" | "edit";
-  onChangeTab: (tab: "ai" | "edit") => void;
+  activeTab: "ai" | "edit" | "jobs";
+  onChangeTab: (tab: "ai" | "edit" | "jobs") => void;
   // AI Tailor Props
   selectedModel: string;
   onSelectModel: (modelId: string) => void;
@@ -16,6 +17,8 @@ interface SidebarProps {
   onSaveGroqKey: (key: string) => void;
   userGeminiKey: string;
   onSaveGeminiKey: (key: string) => void;
+  userFirecrawlKey: string;
+  onSaveFirecrawlKey: (key: string) => void;
   hasEnvGroq: boolean;
   hasEnvGemini: boolean;
   jobDescription: string;
@@ -29,6 +32,10 @@ interface SidebarProps {
   // Editor Props
   resume: ResumeDataType;
   onChangeResume: (updatedResume: ResumeDataType) => void;
+  // Job Radar Props
+  onSelectJobForTailoring: (jd: string) => void;
+  savedBookmarkIds: string[];
+  onToggleBookmark: (jobId: string) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -42,6 +49,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSaveGroqKey,
   userGeminiKey,
   onSaveGeminiKey,
+  userFirecrawlKey,
+  onSaveFirecrawlKey,
   hasEnvGroq,
   hasEnvGemini,
   jobDescription,
@@ -54,6 +63,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onResetResume,
   resume,
   onChangeResume,
+  onSelectJobForTailoring,
+  savedBookmarkIds,
+  onToggleBookmark,
 }) => {
   return (
     <>
@@ -73,7 +85,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           transition-all duration-300 ease-in-out shrink-0 print:hidden flex flex-col overflow-hidden
           ${
             isOpen
-              ? "w-[92vw] sm:w-[460px] xl:w-[460px] translate-x-0 opacity-100"
+              ? "w-[92vw] sm:w-[480px] xl:w-[480px] translate-x-0 opacity-100"
               : "w-0 -translate-x-full xl:translate-x-0 xl:w-0 xl:p-0 xl:border-0 opacity-0 pointer-events-none"
           }
         `}
@@ -83,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-2">
             <SparklesIcon size={16} className="text-zinc-200" />
             <h2 className="font-extrabold text-sm tracking-tight text-zinc-100">
-              Resume Control Center
+              Resume & Job Control Center
             </h2>
           </div>
           <button
@@ -95,37 +107,59 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="p-3 border-b border-zinc-200 bg-zinc-100/60 shrink-0">
-          <div className="grid grid-cols-2 p-1 bg-zinc-200/80 rounded-lg text-xs font-semibold">
+        {/* 3-Way Tab Switcher */}
+        <div className="p-2.5 border-b border-zinc-200 bg-zinc-100/60 shrink-0">
+          <div className="grid grid-cols-3 p-1 bg-zinc-200/80 rounded-lg text-xs font-semibold gap-1">
+            <button
+              onClick={() => onChangeTab("jobs")}
+              className={`py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
+                activeTab === "jobs"
+                  ? "bg-emerald-600 text-white shadow-xs font-bold"
+                  : "text-zinc-600 hover:text-zinc-900"
+              }`}
+            >
+              <TargetIcon size={13} />
+              <span className="truncate">Job Radar</span>
+            </button>
             <button
               onClick={() => onChangeTab("ai")}
-              className={`py-1.5 px-3 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
+              className={`py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
                 activeTab === "ai"
                   ? "bg-white text-zinc-900 shadow-xs font-bold"
                   : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
               <SparklesIcon size={13} />
-              <span>AI Tailor</span>
+              <span className="truncate">AI Tailor</span>
             </button>
             <button
               onClick={() => onChangeTab("edit")}
-              className={`py-1.5 px-3 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
+              className={`py-1.5 px-2 flex items-center justify-center gap-1.5 rounded-md transition-all cursor-pointer ${
                 activeTab === "edit"
                   ? "bg-white text-zinc-900 shadow-xs font-bold"
                   : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
               <Edit3Icon size={13} />
-              <span>UI Editor</span>
+              <span className="truncate">UI Editor</span>
             </button>
           </div>
         </div>
 
         {/* Tab Body */}
         <div className="flex-1 overflow-hidden flex flex-col bg-white">
-          {activeTab === "ai" ? (
+          {activeTab === "jobs" ? (
+            <JobRadarPanel
+              userFirecrawlKey={userFirecrawlKey}
+              onSaveFirecrawlKey={onSaveFirecrawlKey}
+              userGeminiKey={userGeminiKey}
+              userGroqKey={userGroqKey}
+              resume={resume}
+              onSelectJobForTailoring={onSelectJobForTailoring}
+              savedBookmarkIds={savedBookmarkIds}
+              onToggleBookmark={onToggleBookmark}
+            />
+          ) : activeTab === "ai" ? (
             <AiTailorPanel
               selectedModel={selectedModel}
               onSelectModel={onSelectModel}
@@ -156,3 +190,4 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 };
+

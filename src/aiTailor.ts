@@ -95,7 +95,7 @@ export async function tailorResumeWithAI(
   }
 }
 
-async function callGroqApi(
+export async function callGroqApi(
   jobDescription: string,
   apiKey: string,
   modelId: string,
@@ -108,7 +108,7 @@ TARGET JOB DESCRIPTION:
 ${jobDescription}
 
 CANDIDATE BASE RESUME DATA:
-${JSON.stringify(baseResume, null, 2)}
+${baseResume ? JSON.stringify(baseResume, null, 2) : ""}
 `;
 
   const response = await fetch(endpoint, {
@@ -141,12 +141,13 @@ ${JSON.stringify(baseResume, null, 2)}
   return JSON.parse(rawContent);
 }
 
-async function callGeminiApi(
+export async function callGeminiApi(
   jobDescription: string,
   apiKey: string,
   modelId: string,
   baseResume?: ResumeDataType
 ): Promise<TailorResponse> {
+
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey.trim()}`;
 
   const fullPrompt = `${SYSTEM_PROMPT}
