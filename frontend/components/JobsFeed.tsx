@@ -31,12 +31,13 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   onClearLocalJobs,
 }) => {
   const filterPills = [
-    { id: "all", label: `All Jobs (${jobs.length})` },
-    { id: "startups", label: "🚀 Small Startups (High Callback)" },
-    { id: "internship", label: "Internships" },
-    { id: "genai", label: "GenAI" },
-    { id: "remote", label: "Remote" },
-    { id: "india", label: "India" },
+    { id: "all", label: `All GenAI Jobs (${jobs.length})` },
+    { id: "india", label: "🇮🇳 India Roles" },
+    { id: "internship", label: "🎓 Internships & Freshers" },
+    { id: "agents", label: "🤖 LangGraph & Agents" },
+    { id: "rag", label: "🔍 RAG & Vector DB" },
+    { id: "startups", label: "🚀 Seed & YC Startups" },
+    { id: "remote", label: "🌐 Remote" },
   ];
 
   return (

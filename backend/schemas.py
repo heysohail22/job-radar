@@ -15,6 +15,8 @@ class JobPosting(BaseModel):
     match_reason: str = Field(alias="matchReason", default="Matching role.")
     is_internship: bool = Field(alias="isInternship", default=True)
     company_stage: Optional[str] = Field(alias="companyStage", default="Seed / Series A")
+    is_india: bool = Field(alias="isIndia", default=False)
+    is_fresher: bool = Field(alias="isFresher", default=True)
 
     class Config:
         populate_by_name = True

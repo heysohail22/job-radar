@@ -103,5 +103,68 @@
     "ats": "greenhouse",
     "stage": "Frontier AI Lab",
     "tags": ["Claude", "Alignment", "LLM Research"]
+  },
+  {
+    "name": "Sarvam AI",
+    "slug": "sarvam",
+    "ats": "ashby",
+    "stage": "Seed (India GenAI Lab)",
+    "tags": ["GenAI India", "LLMs", "Agents", "Bengaluru"]
+  },
+  {
+    "name": "Atlan",
+    "slug": "atlan",
+    "ats": "ashby",
+    "stage": "Series B (India AI/Data)",
+    "tags": ["Data Platform", "Python", "Bengaluru", "Remote India"]
+  },
+  {
+    "name": "Groww",
+    "slug": "groww",
+    "ats": "greenhouse",
+    "stage": "Fintech & AI",
+    "tags": ["Backend", "Frontend", "Bengaluru"]
+  },
+  {
+    "name": "InMobi",
+    "slug": "inmobi",
+    "ats": "greenhouse",
+    "stage": "AI & AdTech",
+    "tags": ["Data", "AI", "Bengaluru"]
+  },
+  {
+    "name": "SigNoz",
+    "slug": "signoz",
+    "ats": "ashby",
+    "stage": "Seed (YC W21 Open Source)",
+    "tags": ["Observability", "Open Source", "Bengaluru", "Remote India"]
+  },
+  {
+    "name": "Razorpay",
+    "slug": "razorpaysoftwareprivatelimited",
+    "ats": "greenhouse",
+    "stage": "Growth (FinTech & AI)",
+    "tags": ["Payments AI", "Python", "Bengaluru"]
+  },
+  {
+    "name": "Composio",
+    "slug": "composio",
+    "ats": "ashby",
+    "stage": "Seed (Agent Tooling & Workflows)",
+    "tags": ["AI Agents", "Tool Calling", "Python", "Bangalore", "San Francisco"]
+  },
+  {
+    "name": "Cognition",
+    "slug": "cognition",
+    "ats": "ashby",
+    "stage": "Series A (Devin Autonomous AI)",
+    "tags": ["Autonomous Agents", "Code Generation", "Python"]
+  },
+  {
+    "name": "Perplexity AI",
+    "slug": "perplexity",
+    "ats": "ashby",
+    "stage": "Series B (Conversational Search)",
+    "tags": ["RAG", "LLM Search", "Python", "Inference"]
   }
 ]

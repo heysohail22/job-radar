@@ -33,11 +33,21 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
             <CompanyLogo name={job.company} className="w-12 h-12" />
             <div>
               <h2 className="font-extrabold text-base text-[#F8F8F8]">{job.title}</h2>
-              <div className="flex items-center gap-2 flex-wrap pt-0.5">
+              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                 <p className="text-xs text-[#AAB4C5] font-semibold">{job.company}</p>
                 {job.companyStage && (
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#6366F1]/20 text-[#A5B4FC] border border-[#6366F1]/40 shadow-xs">
                     🚀 {job.companyStage}
+                  </span>
+                )}
+                {(job.isIndia || /india|bengaluru|bangalore|hyderabad|pune|delhi|mumbai|chennai/i.test(job.location)) && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#F59E0B]/15 text-[#FBBF24] border border-[#F59E0B]/30 shadow-xs">
+                    🇮🇳 India
+                  </span>
+                )}
+                {(job.isInternship || job.isFresher || /intern|fresher|junior/i.test(job.title)) && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#10B981]/15 text-[#34D399] border border-[#10B981]/30 shadow-xs">
+                    🎓 Fresher / Intern
                   </span>
                 )}
               </div>

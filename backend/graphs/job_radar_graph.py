@@ -59,22 +59,34 @@ async def fetch_live_node(state: JobRadarState) -> Dict[str, Any]:
         fc_jobs = fetch_firecrawl_yc_jobs(key, query)
         live_jobs.extend(fc_jobs)
         
-    combined = list(state.get("jobs", []))
+    combined = list(CURATED_JOBS)
     for job in live_jobs:
         if not any(existing.title.lower() == job.title.lower() and existing.company.lower() == job.company.lower() for existing in combined):
-            combined.insert(0, job)
+            combined.append(job)
             
-    # Sort by callback probability (Seed > Series A > others) and then match score descending
+    # Prioritize India roles and Fresher/Intern GenAI opportunities
     def callback_sort_key(j: JobPosting):
+        is_ind = bool(j.is_india)
+        is_fresh = bool(j.is_fresher or j.is_internship)
         stage = (j.company_stage or "").lower()
-        if "seed" in stage:
+        
+        # Tier 0: India + Fresher / Intern GenAI roles
+        if is_ind and is_fresh:
             tier = 0
-        elif "series a" in stage:
+        # Tier 1: Global GenAI Internships & Freshers (e.g. LangChain, YC AI Interns)
+        elif is_fresh:
             tier = 1
-        elif "series b" in stage:
+        # Tier 2: India GenAI startup engineering (Sarvam, Composio, Scale AI)
+        elif is_ind:
             tier = 2
-        else:
+        # Tier 3: Seed & YC GenAI startups
+        elif "seed" in stage or "yc" in stage:
             tier = 3
+        # Tier 4: Series A GenAI startups
+        elif "series a" in stage:
+            tier = 4
+        else:
+            tier = 5
         return (tier, -j.match_score)
 
     combined.sort(key=callback_sort_key)

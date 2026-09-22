@@ -214,21 +214,37 @@ export default function Home() {
       ) {
         return false;
       }
-      if (activePillFilter === "internship" && !job.isInternship && !job.title.toLowerCase().includes("intern")) {
-        return false;
+      if (activePillFilter === "internship") {
+        const isInternOrFresher =
+          job.isInternship ||
+          job.isFresher ||
+          /intern|fresher|graduate|trainee|junior|student|co-op|apprentice/i.test(
+            job.title + " " + job.description
+          );
+        if (!isInternOrFresher) return false;
       }
-      if (
-        activePillFilter === "genai" &&
-        !job.title.toLowerCase().includes("ai") &&
-        !job.techStack.some((t) => t.toLowerCase().includes("ai") || t.toLowerCase().includes("llm"))
-      ) {
-        return false;
+      if (activePillFilter === "agents") {
+        const matchesAgents =
+          /agent|langgraph|langchain|tool|workflow/i.test(job.title + " " + job.description) ||
+          job.techStack.some((t) => /agent|langgraph|langchain|tool/i.test(t));
+        if (!matchesAgents) return false;
+      }
+      if (activePillFilter === "rag") {
+        const matchesRag =
+          /rag|vector|supabase|pgvector|crag|retrieval/i.test(job.title + " " + job.description) ||
+          job.techStack.some((t) => /rag|vector|supabase|pgvector|crag/i.test(t));
+        if (!matchesRag) return false;
       }
       if (activePillFilter === "remote" && !job.location.toLowerCase().includes("remote")) {
         return false;
       }
-      if (activePillFilter === "india" && !job.location.toLowerCase().includes("india")) {
-        return false;
+      if (activePillFilter === "india") {
+        const isIndiaRole =
+          job.isIndia ||
+          /india|bengaluru|bangalore|hyderabad|pune|gurgaon|gurugram|delhi|ncr|mumbai|noida|chennai|kochi/i.test(
+            job.location + " " + job.title + " " + job.description
+          );
+        if (!isIndiaRole) return false;
       }
       return true;
     });

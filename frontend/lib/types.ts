@@ -12,4 +12,6 @@ export interface JobPostingItem {
   matchReason: string;
   isInternship?: boolean;
   companyStage?: string;
+  isIndia?: boolean;
+  isFresher?: boolean;
 }
