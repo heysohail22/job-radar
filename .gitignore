@@ -39,3 +39,12 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# Python ignores
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+*.db
+*.sqlite3
+
