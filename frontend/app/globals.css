@@ -49,3 +49,46 @@ html, body {
   -webkit-text-fill-color: transparent;
 }
 
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  html,
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  header, nav, aside, .print-hide {
+    display: none !important;
+  }
+
+  #resume-page {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    transform: none !important;
+    transform-origin: initial !important;
+    font-size: var(--resume-font-size, 12px) !important;
+    line-height: var(--resume-line-height, 1.45) !important;
+    padding: var(--resume-padding, 28px 36px) !important;
+    border-radius: 0 !important;
+  }
+
+  #resume-page section {
+    margin-bottom: var(--resume-section-gap, 8px) !important;
+  }
+}
+
+

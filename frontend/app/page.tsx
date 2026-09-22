@@ -34,6 +34,7 @@ export default function Home() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const [targetTailorJD, setTargetTailorJD] = useState<string>("");
 
   // Sync saved jobs from localStorage after hydration without mismatch
   useEffect(() => {
@@ -85,24 +86,20 @@ export default function Home() {
     fetchBackendJobs({ silent: true });
   }, []);
 
-  // Fetch jobs from backend (FastAPI /api/jobs) with a 5s timeout
+  // Fetch jobs from backend (FastAPI /api/jobs) with graceful abort handling
   const fetchBackendJobs = async ({ silent = false }: { silent?: boolean } = {}) => {
     setIsFetchingBackend(true);
     if (!silent) setStatusFeedback(null);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       const baseUrl = getBackendUrl();
-      let res = await fetch(`${baseUrl}/api/jobs?force_live=true`, {
+      // Fast fetch from backend database/cache (instant response)
+      const res = await fetch(`${baseUrl}/api/jobs`, {
         signal: controller.signal,
       });
-      if (!res.ok) {
-        res = await fetch(`${baseUrl}/api/jobs`, {
-          signal: controller.signal,
-        });
-      }
 
       if (!res.ok) {
         throw new Error(`Backend responded with status ${res.status}`);
@@ -126,6 +123,10 @@ export default function Home() {
         }
       }
     } catch (err: unknown) {
+      // Gracefully ignore intentional abort cancellations
+      if (err instanceof Error && err.name === "AbortError") {
+        return;
+      }
       console.error("Fetch backend jobs error:", err);
       if (!silent) {
         setStatusFeedback({
@@ -280,7 +281,8 @@ export default function Home() {
     setIsMobileDetailOpen(true);
   };
 
-  const handleTailorResume = (_jobDesc: string) => {
+  const handleTailorResume = (jobDesc: string) => {
+    setTargetTailorJD(jobDesc);
     setActiveTab("resume");
     setIsMobileDetailOpen(false);
   };
@@ -315,6 +317,9 @@ export default function Home() {
                   setActiveTab("jobs");
                   setIsMobileDetailOpen(false);
                 }}
+                targetJobDescription={targetTailorJD}
+                availableJobs={jobs}
+                backendUrl={getBackendUrl()}
               />
             </div>
           ) : (
