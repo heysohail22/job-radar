@@ -15,12 +15,11 @@ export const JobCard: React.FC<JobCardProps> = ({
   onSelect,
 }) => {
   return (
-    <div
+    <button
+      type="button"
       onClick={onSelect}
-      role="button"
-      tabIndex={0}
       className={`
-        p-4 rounded-2xl border transition-all duration-150 cursor-pointer text-left relative group active:scale-[0.99] hover:-translate-y-0.5
+        w-full p-4 rounded-2xl border transition-all duration-150 cursor-pointer text-left relative group active:scale-[0.99]
         ${
           isSelected
             ? "bg-[#101828] border-[#6366F1] shadow-lg shadow-[#6366F1]/15 ring-1 ring-[#6366F1]/40 magic-glow-border"
@@ -103,7 +102,7 @@ export const JobCard: React.FC<JobCardProps> = ({
           <span>{job.source}</span>
         </span>
       </div>
-    </div>
+    </button>
   );
 };
 

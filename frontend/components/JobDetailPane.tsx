@@ -28,10 +28,11 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
   const strokeDashoffset = circumference - (job.matchScore / 100) * circumference;
 
   return (
-    <div className="w-full md:w-[380px] lg:w-[420px] xl:w-[460px] md:border-l border-[#232B3B] bg-[#080F18] h-full overflow-y-auto p-4 sm:p-5 space-y-4 text-left shrink-0">
+    <div className="w-full flex-1 md:w-[380px] lg:w-[420px] xl:w-[460px] md:border-l border-[#232B3B] bg-[#080F18] h-full min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 text-left md:shrink-0">
       {/* Mobile Back to Jobs Button */}
       {onBack && (
         <button
+          type="button"
           onClick={onBack}
           className="md:hidden flex items-center gap-2 px-3 py-2 rounded-xl bg-[#101828] border border-[#232B3B] text-xs font-bold text-[#AAB4C5] hover:text-[#F8F8F8] active:scale-95 transition-all cursor-pointer w-fit shadow-xs"
         >
@@ -89,6 +90,7 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
 
         {/* Hero 1-Click Tailor Resume Button */}
         <button
+          type="button"
           onClick={() => onTailorResume(job.description)}
           className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#7C3AED] text-[#F8F8F8] font-black text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-[#4F46E5]/30 magic-purple-glow active:scale-[0.99]"
         >

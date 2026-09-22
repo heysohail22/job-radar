@@ -41,7 +41,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   ];
 
   return (
-    <div className="flex-1 h-full overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 text-left bg-[#080F18]">
+    <div className="w-full flex-1 min-h-0 h-full overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-6 text-left bg-[#080F18]">
       {/* Feed Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
         <div>
@@ -130,6 +130,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
             return (
               <button
                 key={pill.id}
+                type="button"
                 onClick={() => onFilterChange(pill.id)}
                 className={`
                   px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer shrink-0

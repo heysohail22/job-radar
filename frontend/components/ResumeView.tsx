@@ -19,7 +19,7 @@ export const ResumeView: React.FC<ResumeViewProps> = ({ onGoToJobFinder }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
 
   return (
-    <div className="flex-1 h-full overflow-y-auto p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6 text-left bg-[#080F18]">
+    <div className="w-full flex-1 min-h-0 h-full overflow-y-auto touch-pan-y p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6 text-left bg-[#080F18]">
       {/* Header */}
       <div>
         <h2 className="text-xl sm:text-2xl font-black text-[#F8F8F8] tracking-tight">My Resume</h2>

@@ -8,22 +8,50 @@ import { JobDetailPane } from "../components/JobDetailPane";
 import { ResumeView } from "../components/ResumeView";
 import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle, Home as HomeIcon, FileText } from "lucide-react";
 import type { JobPostingItem } from "../lib/types";
+import { defaultJobs } from "../lib/defaultJobs";
 
 const STORAGE_KEY = "jobmatch_radar_jobs";
+
+// Dynamically connect to backend via LAN IP (e.g. 192.168.x.x:8000) or localhost
+const getBackendUrl = () => {
+  if (typeof window !== "undefined" && window.location.hostname) {
+    return `http://${window.location.hostname}:8000`;
+  }
+  return "http://localhost:8000";
+};
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<NavTab>("jobs");
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [activePillFilter, setActivePillFilter] = useState<string>("all");
-  const [jobs, setJobs] = useState<JobPostingItem[]>([]);
-  const [selectedJob, setSelectedJob] = useState<JobPostingItem | null>(null);
+  // Start with defaultJobs on both SSR and client to ensure 100% hydration match
+  const [jobs, setJobs] = useState<JobPostingItem[]>(defaultJobs);
+  const [selectedJob, setSelectedJob] = useState<JobPostingItem | null>(defaultJobs[0] || null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isFetchingBackend, setIsFetchingBackend] = useState<boolean>(false);
   const [statusFeedback, setStatusFeedback] = useState<{
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+
+  // Sync saved jobs from localStorage after hydration without mismatch
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setJobs(parsed);
+            setSelectedJob(parsed[0]);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Local storage load error:", err);
+    }
+  }, []);
 
   // Set sidebar open by default only on desktop
   useEffect(() => {
@@ -52,40 +80,28 @@ export default function Home() {
     }
   };
 
-  // 1. Initial Load: Load from localStorage first, then sync with backend
+  // 1. Initial Load: Sync fresh jobs from backend in background without blocking UI
   useEffect(() => {
-    let hasLocal = false;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setJobs(parsed);
-          setSelectedJob(parsed[0]);
-          hasLocal = true;
-        }
-      }
-    } catch {
-      // Local storage read error
-    }
-
-    // If no jobs in localStorage, fetch from backend automatically
-    if (!hasLocal) {
-      fetchBackendJobs({ silent: true });
-    }
+    fetchBackendJobs({ silent: true });
   }, []);
 
-  // Fetch jobs from backend (FastAPI /api/jobs) and save locally
+  // Fetch jobs from backend (FastAPI /api/jobs) with a 5s timeout
   const fetchBackendJobs = async ({ silent = false }: { silent?: boolean } = {}) => {
     setIsFetchingBackend(true);
     if (!silent) setStatusFeedback(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
     try {
-      // Try fetching live / fresh jobs from backend
-      let res = await fetch("http://localhost:8000/api/jobs?force_live=true");
+      const baseUrl = getBackendUrl();
+      let res = await fetch(`${baseUrl}/api/jobs?force_live=true`, {
+        signal: controller.signal,
+      });
       if (!res.ok) {
-        // Fallback to cached jobs in DB
-        res = await fetch("http://localhost:8000/api/jobs");
+        res = await fetch(`${baseUrl}/api/jobs`, {
+          signal: controller.signal,
+        });
       }
 
       if (!res.ok) {
@@ -113,11 +129,12 @@ export default function Home() {
       console.error("Fetch backend jobs error:", err);
       if (!silent) {
         setStatusFeedback({
-          message: "Failed to connect to backend at localhost:8000. Is FastAPI running?",
+          message: "Failed to connect to backend. Is FastAPI running on port 8000?",
           type: "error",
         });
       }
     } finally {
+      clearTimeout(timeoutId);
       setIsFetchingBackend(false);
       if (!silent) {
         setTimeout(() => setStatusFeedback(null), 5000);
@@ -129,7 +146,7 @@ export default function Home() {
   const handleScanLive = async () => {
     setIsScanning(true);
     try {
-      const res = await fetch("http://localhost:8000/api/jobs?force_live=true");
+      const res = await fetch(`${getBackendUrl()}/api/jobs?force_live=true`);
       if (res.ok) {
         const liveData = await res.json();
         if (Array.isArray(liveData) && liveData.length > 0) {
@@ -157,7 +174,7 @@ export default function Home() {
   const handleFirecrawlScrape = async () => {
     setIsScanning(true);
     try {
-      const res = await fetch("http://localhost:8000/api/jobs/scrape", {
+      const res = await fetch(`${getBackendUrl()}/api/jobs/scrape`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -269,7 +286,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased relative">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased relative">
       {/* 1. Left Collapsible Sidebar with close button */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -292,17 +309,19 @@ export default function Home() {
         {/* Dynamic Body Pane */}
         <main className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
           {activeTab === "resume" ? (
-            <ResumeView
-              onGoToJobFinder={() => {
-                setActiveTab("jobs");
-                setIsMobileDetailOpen(false);
-              }}
-            />
+            <div className="w-full flex-1 min-h-0 h-full overflow-hidden flex">
+              <ResumeView
+                onGoToJobFinder={() => {
+                  setActiveTab("jobs");
+                  setIsMobileDetailOpen(false);
+                }}
+              />
+            </div>
           ) : (
             <>
               {/* Center Feed: Visible on desktop always, or on mobile when detail pane is NOT active */}
               <div
-                className={`flex-1 h-full overflow-hidden ${
+                className={`flex-1 min-h-0 h-full overflow-hidden ${
                   isMobileDetailOpen ? "hidden md:flex" : "flex"
                 }`}
               >
@@ -323,9 +342,9 @@ export default function Home() {
 
               {/* Right Detail Pane: Visible on desktop always (or placeholder), and on mobile when a job is selected */}
               <div
-                className={`h-full ${
-                  isMobileDetailOpen ? "flex w-full" : "hidden md:flex"
-                } md:w-auto overflow-hidden`}
+                className={`flex-1 min-h-0 h-full ${
+                  isMobileDetailOpen ? "flex flex-col w-full" : "hidden md:flex md:w-auto"
+                } overflow-hidden`}
               >
                 {selectedJob ? (
                   <JobDetailPane
@@ -352,6 +371,7 @@ export default function Home() {
         {/* 3. Mobile Bottom Navigation Bar */}
         <nav className="md:hidden h-14 border-t border-[#232B3B] bg-[#080820]/95 backdrop-blur-md flex items-center justify-around px-4 shrink-0 z-20">
           <button
+            type="button"
             onClick={() => {
               setActiveTab("jobs");
               setIsMobileDetailOpen(false);
@@ -366,6 +386,7 @@ export default function Home() {
             <span className="text-[10px]">Jobs Radar</span>
           </button>
           <button
+            type="button"
             onClick={() => {
               setActiveTab("resume");
               setIsMobileDetailOpen(false);

@@ -95,33 +95,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     </>
   );
 
-  return (
-    <>
-      {/* 1. Mobile Drawer (< 768px) */}
-      <div className="md:hidden">
-        {isOpen && (
-          <>
-            {/* Mobile Backdrop */}
-            <div
-              onClick={onClose}
-              className="fixed inset-0 bg-black/75 backdrop-blur-xs z-40 cursor-pointer animate-in fade-in duration-150"
-            />
-            {/* Mobile Drawer Panel */}
-            <aside
-              className="fixed inset-y-0 left-0 z-50 w-[260px] bg-[#080820] border-r border-[#232B3B] flex flex-col justify-between p-4 shadow-2xl animate-in slide-in-from-left duration-200"
-            >
-              {renderContent(true)}
-            </aside>
-          </>
-        )}
-      </div>
+  if (!isOpen) return null;
 
-      {/* 2. Desktop Sidebar (>= 768px) */}
-      {isOpen && (
-        <aside className="hidden md:flex w-[240px] border-r border-[#232B3B] bg-[#080820] flex-col justify-between p-4 shrink-0 h-full overflow-hidden z-30">
-          {renderContent(false)}
-        </aside>
-      )}
-    </>
+  return (
+    <aside className="hidden md:flex w-[240px] border-r border-[#232B3B] bg-[#080820] flex-col justify-between p-4 shrink-0 h-full overflow-hidden z-30">
+      {renderContent(false)}
+    </aside>
   );
 };
