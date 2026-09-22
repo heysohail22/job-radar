@@ -56,9 +56,10 @@ def fetch_firecrawl_yc_jobs(api_key: str, query: str = "Gen AI Intern") -> List[
                 postedDate="Fresh",
                 source="Firecrawl",
                 techStack=["Python", "React", "TypeScript", "LangChain", "LLMs"],
-                matchScore=90,
-                matchReason="Matches YC AI startup intern skills.",
-                isInternship=True
+                matchScore=95,
+                matchReason="High callback rate: Early-stage YC Startup.",
+                isInternship=True,
+                company_stage="Seed / YC Startup"
             ))
         return jobs
     except Exception as e:

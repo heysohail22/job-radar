@@ -1,7 +1,7 @@
 import React from "react";
-import { Sparkles, ChevronDown, Radar, Loader2 } from "lucide-react";
+import { Sparkles, ChevronDown, Radar, Loader2, Flame, RefreshCw, Trash2 } from "lucide-react";
 import { JobCard } from "./JobCard";
-import type { JobPostingItem } from "../lib/mockJobs";
+import type { JobPostingItem } from "../lib/types";
 
 interface JobsFeedProps {
   jobs: JobPostingItem[];
@@ -9,8 +9,12 @@ interface JobsFeedProps {
   onSelectJob: (job: JobPostingItem) => void;
   activeFilter: string;
   onFilterChange: (filter: string) => void;
+  onFetchJobs?: () => void;
+  isFetching?: boolean;
   onScanLive?: () => void;
+  onOpenFirecrawl?: () => void;
   isScanning?: boolean;
+  onClearLocalJobs?: () => void;
 }
 
 export const JobsFeed: React.FC<JobsFeedProps> = ({
@@ -19,11 +23,16 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   onSelectJob,
   activeFilter,
   onFilterChange,
+  onFetchJobs,
+  isFetching = false,
   onScanLive,
+  onOpenFirecrawl,
   isScanning = false,
+  onClearLocalJobs,
 }) => {
   const filterPills = [
     { id: "all", label: `All Jobs (${jobs.length})` },
+    { id: "startups", label: "🚀 Small Startups (High Callback)" },
     { id: "internship", label: "Internships" },
     { id: "genai", label: "GenAI" },
     { id: "remote", label: "Remote" },
@@ -46,27 +55,69 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
           </p>
         </div>
 
-        {/* Live Status & Scan Trigger */}
+        {/* Live Status & Scan Triggers */}
         <div className="flex items-center gap-2">
+          {/* Primary Backend Fetch Button */}
+          {onFetchJobs && (
+            <button
+              onClick={onFetchJobs}
+              disabled={isFetching || isScanning}
+              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] border border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-md shadow-[#4F46E5]/25 active:scale-95"
+              title="Fetch latest jobs from FastAPI backend and save to local storage"
+            >
+              {isFetching ? (
+                <Loader2 size={13} className="animate-spin text-[#F8F8F8]" />
+              ) : (
+                <RefreshCw size={13} className="text-[#F8F8F8]" />
+              )}
+              <span>{isFetching ? "Fetching..." : "Fetch New Jobs"}</span>
+            </button>
+          )}
+
+          {/* Firecrawl Button */}
+          {onOpenFirecrawl && (
+            <button
+              onClick={onOpenFirecrawl}
+              disabled={isScanning || isFetching}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#FF5722]/20 to-[#4F46E5]/20 hover:from-[#FF5722]/30 hover:to-[#4F46E5]/30 border border-[#FF5722]/40 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+              title="Scrape YC & Startup career portals using Firecrawl"
+            >
+              <Flame size={13} className="text-[#FF5722]" />
+              <span className="hidden sm:inline">Fetch with Firecrawl</span>
+            </button>
+          )}
+
+          {/* Live ATS Scan Button */}
           {onScanLive && (
             <button
               onClick={onScanLive}
-              disabled={isScanning}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#101828] hover:bg-[#181F30] border border-[#232B3B] hover:border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+              disabled={isScanning || isFetching}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#101828] hover:bg-[#181F30] border border-[#232B3B] hover:border-[#6366F1]/50 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+              title="Scan Greenhouse, Lever, and Ashby"
             >
               {isScanning ? (
                 <Loader2 size={13} className="animate-spin text-[#6366F1]" />
               ) : (
                 <Radar size={13} className="text-[#6366F1]" />
               )}
-              <span>{isScanning ? "Scanning ATS..." : "Scan Live ATS"}</span>
+              <span className="hidden sm:inline">{isScanning ? "Scanning..." : "Scan ATS"}</span>
             </button>
           )}
 
-          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#101828] border border-[#232B3B] text-xs">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#101828] border border-[#232B3B] text-xs">
             <div className={`w-2 h-2 rounded-full ${jobs.length > 0 ? "bg-[#10B981] animate-pulse" : "bg-[#667085]"}`} />
-            <span className="font-bold text-[#F8F8F8]">{jobs.length} live jobs</span>
+            <span className="font-bold text-[#F8F8F8]">{jobs.length} local</span>
           </div>
+
+          {jobs.length > 0 && onClearLocalJobs && (
+            <button
+              onClick={onClearLocalJobs}
+              className="p-1.5 rounded-xl bg-[#101828] hover:bg-rose-500/20 text-[#667085] hover:text-rose-400 border border-[#232B3B] transition-colors cursor-pointer"
+              title="Clear locally stored jobs"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -81,10 +132,9 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
                 onClick={() => onFilterChange(pill.id)}
                 className={`
                   px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer
-                  ${
-                    isActive
-                      ? "bg-[#4F46E5] text-[#F8F8F8] shadow-xs"
-                      : "bg-[#101828] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:bg-[#181F30]"
+                  ${isActive
+                    ? "bg-[#4F46E5] text-[#F8F8F8] shadow-xs"
+                    : "bg-[#101828] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:bg-[#181F30]"
                   }
                 `}
               >
@@ -107,22 +157,44 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
         {jobs.length === 0 ? (
           <div className="p-12 text-center rounded-2xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] text-xs space-y-3">
             <div className="w-12 h-12 rounded-2xl bg-[#181F30] border border-[#232B3B] flex items-center justify-center text-[#6366F1] mx-auto">
-              <Radar size={22} className={isScanning ? "animate-spin" : ""} />
+              <RefreshCw size={22} className={isFetching || isScanning ? "animate-spin" : ""} />
             </div>
-            <p className="font-bold text-sm text-[#F8F8F8]">No jobs currently stored</p>
+            <p className="font-bold text-sm text-[#F8F8F8]">No jobs in local storage yet</p>
             <p className="text-[#667085] max-w-sm mx-auto">
-              All manually created jobs have been deleted. Click below to scrape live openings directly from Greenhouse, Lever, and Ashby.
+              Click below to fetch live opportunities from your FastAPI backend and store them locally.
             </p>
-            {onScanLive && (
-              <button
-                onClick={onScanLive}
-                disabled={isScanning}
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#6366F1] text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
-              >
-                {isScanning ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                <span>{isScanning ? "Scraping Live ATS Feeds..." : "Scan Live ATS Boards Now"}</span>
-              </button>
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+              {onFetchJobs && (
+                <button
+                  onClick={onFetchJobs}
+                  disabled={isFetching || isScanning}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] text-white font-bold text-xs transition-all cursor-pointer shadow-lg shadow-[#4F46E5]/30 disabled:opacity-50 active:scale-95"
+                >
+                  {isFetching ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+                  <span>{isFetching ? "Fetching from Backend..." : "Fetch Jobs from Backend"}</span>
+                </button>
+              )}
+              {onOpenFirecrawl && (
+                <button
+                  onClick={onOpenFirecrawl}
+                  disabled={isScanning || isFetching}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FF5722] to-[#4F46E5] hover:from-[#FF7043] hover:to-[#6366F1] text-white font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  <Flame size={14} />
+                  <span>Fetch with Firecrawl</span>
+                </button>
+              )}
+              {onScanLive && (
+                <button
+                  onClick={onScanLive}
+                  disabled={isScanning || isFetching}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#F8F8F8] font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isScanning ? <Loader2 size={14} className="animate-spin text-[#6366F1]" /> : <Sparkles size={14} className="text-[#6366F1]" />}
+                  <span>{isScanning ? "Scanning Live ATS..." : "Scan Live ATS Boards"}</span>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           jobs.map((job) => (
@@ -138,3 +210,4 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
     </div>
   );
 };
+

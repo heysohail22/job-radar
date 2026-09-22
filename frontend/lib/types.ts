@@ -10,14 +10,6 @@ export interface JobPostingItem {
   techStack: string[];
   matchScore: number;
   matchReason: string;
-  isInternship: boolean;
+  isInternship?: boolean;
+  companyStage?: string;
 }
-
-// No fake or manually created jobs - empty until real jobs are scraped live from ATS
-export const REAL_SCRAPED_JOBS: JobPostingItem[] = [];
-
-// Alias for backward compatibility
-export type JobMatchItem = JobPostingItem;
-export const MOCK_JOBS = REAL_SCRAPED_JOBS;
-
-

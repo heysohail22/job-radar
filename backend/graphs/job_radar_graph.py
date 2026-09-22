@@ -2,7 +2,14 @@ import asyncio
 from typing import List, Dict, Any, TypedDict
 from langgraph.graph import StateGraph, END
 from schemas import JobPosting
-from services.ats_scraper import CURATED_JOBS, fetch_greenhouse_jobs, fetch_lever_jobs
+from services.ats_scraper import (
+    CURATED_JOBS,
+    fetch_greenhouse_jobs,
+    fetch_lever_jobs,
+    fetch_ashby_jobs,
+    fetch_yc_startup_jobs,
+    load_startups_directory,
+)
 from services.firecrawl_service import fetch_firecrawl_yc_jobs
 
 class JobRadarState(TypedDict):
@@ -18,16 +25,30 @@ async def fetch_live_node(state: JobRadarState) -> Dict[str, Any]:
     if not state.get("force_live"):
         return {"jobs": state.get("jobs", [])}
         
-    query = state.get("search_query") or "Gen AI Intern"
+    query = state.get("search_query") or ""
     key = state.get("firecrawl_key") or ""
     
-    # Run ATS fetches in parallel
-    gh_task1 = fetch_greenhouse_jobs("langchain")
-    gh_task2 = fetch_greenhouse_jobs("anthropic")
-    gh_task3 = fetch_greenhouse_jobs("pinecone")
-    lev_task = fetch_lever_jobs("huggingface")
+    # Load curated startup catalog
+    startups = load_startups_directory()
+    tasks = []
     
-    results = await asyncio.gather(gh_task1, gh_task2, gh_task3, lev_task, return_exceptions=True)
+    # Always include live Y Combinator batch startups
+    tasks.append(fetch_yc_startup_jobs())
+    
+    for s in startups:
+        ats = (s.get("ats") or "ashby").lower()
+        slug = s.get("slug")
+        stage = s.get("stage", "Seed / Series A")
+        if not slug:
+            continue
+        if ats == "ashby":
+            tasks.append(fetch_ashby_jobs(slug, stage))
+        elif ats == "greenhouse":
+            tasks.append(fetch_greenhouse_jobs(slug, stage))
+        elif ats == "lever":
+            tasks.append(fetch_lever_jobs(slug, stage))
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     
     live_jobs: List[JobPosting] = []
     for r in results:
@@ -43,6 +64,20 @@ async def fetch_live_node(state: JobRadarState) -> Dict[str, Any]:
         if not any(existing.title.lower() == job.title.lower() and existing.company.lower() == job.company.lower() for existing in combined):
             combined.insert(0, job)
             
+    # Sort by callback probability (Seed > Series A > others) and then match score descending
+    def callback_sort_key(j: JobPosting):
+        stage = (j.company_stage or "").lower()
+        if "seed" in stage:
+            tier = 0
+        elif "series a" in stage:
+            tier = 1
+        elif "series b" in stage:
+            tier = 2
+        else:
+            tier = 3
+        return (tier, -j.match_score)
+
+    combined.sort(key=callback_sort_key)
     return {"jobs": combined}
 
 def filter_node(state: JobRadarState) -> Dict[str, Any]:
@@ -52,13 +87,15 @@ def filter_node(state: JobRadarState) -> Dict[str, Any]:
     if not query:
         return {"jobs": jobs}
         
-    filtered = [
-        j for j in jobs
-        if query in j.title.lower()
-        or query in j.company.lower()
-        or query in j.description.lower()
-        or any(query in t.lower() for t in j.tech_stack)
-    ]
+    words = [w for w in query.split() if len(w) > 1]
+    if not words:
+        return {"jobs": jobs}
+        
+    filtered = []
+    for j in jobs:
+        haystack = f"{j.title} {j.company} {j.description} {' '.join(j.tech_stack)}".lower()
+        if any(w in haystack for w in words):
+            filtered.append(j)
     return {"jobs": filtered}
 
 # Build LangGraph State Machine

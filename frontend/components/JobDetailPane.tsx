@@ -8,7 +8,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos";
-import type { JobPostingItem } from "../lib/mockJobs";
+import type { JobPostingItem } from "../lib/types";
 
 interface JobDetailPaneProps {
   job: JobPostingItem;
@@ -33,7 +33,14 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
             <CompanyLogo name={job.company} className="w-12 h-12" />
             <div>
               <h2 className="font-extrabold text-base text-[#F8F8F8]">{job.title}</h2>
-              <p className="text-xs text-[#AAB4C5] font-semibold">{job.company}</p>
+              <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                <p className="text-xs text-[#AAB4C5] font-semibold">{job.company}</p>
+                {job.companyStage && (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#6366F1]/20 text-[#A5B4FC] border border-[#6366F1]/40 shadow-xs">
+                    🚀 {job.companyStage}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <span className="px-2.5 py-1 rounded-full text-xs font-black tracking-tight bg-[#10B981]/15 border border-[#10B981]/40 text-[#34D399] shrink-0">
@@ -152,11 +159,23 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
       <div className="p-4 rounded-2xl bg-[#101828] border border-[#232B3B] space-y-2.5 shadow-xs">
         <h4 className="font-bold text-xs text-[#F8F8F8] uppercase tracking-wider">Job Description</h4>
         <div className="text-xs text-[#AAB4C5] leading-relaxed space-y-2.5 font-normal">
-          <p className="whitespace-pre-line">{job.description}</p>
+          <p className="whitespace-pre-line leading-relaxed">
+            {job.description
+              .replace(/<[^>]*>/g, " ")
+              .replace(/&amp;/g, "&")
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">")
+              .replace(/&quot;/g, '"')
+              .replace(/&#39;/g, "'")
+              .replace(/&nbsp;/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()}
+          </p>
         </div>
       </div>
     </div>
   );
 };
+
 
 

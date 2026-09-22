@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { MapPin, Clock, ChevronRight, Globe2 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos";
-import type { JobPostingItem } from "../lib/mockJobs";
+import type { JobPostingItem } from "../lib/types";
 
 interface JobCardProps {
   job: JobPostingItem;
@@ -38,7 +38,14 @@ export const JobCard: React.FC<JobCardProps> = ({
               <span>{job.title}</span>
               <ChevronRight size={14} className="text-[#667085]" />
             </h3>
-            <p className="text-xs text-[#AAB4C5] font-medium">{job.company}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-xs text-[#AAB4C5] font-medium">{job.company}</p>
+              {job.companyStage && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#6366F1]/20 text-[#A5B4FC] border border-[#6366F1]/40 shadow-xs">
+                  🚀 {job.companyStage}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

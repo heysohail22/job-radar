@@ -1,0 +1,107 @@
+[
+  {
+    "name": "E2B",
+    "slug": "e2b",
+    "ats": "ashby",
+    "stage": "Seed (AI Sandbox)",
+    "tags": ["AI Agents", "Code Execution", "Python"]
+  },
+  {
+    "name": "Mem0",
+    "slug": "mem0",
+    "ats": "ashby",
+    "stage": "Seed (Agent Memory)",
+    "tags": ["Agent Memory", "RAG", "LLMs"]
+  },
+  {
+    "name": "LlamaIndex",
+    "slug": "llamaindex",
+    "ats": "ashby",
+    "stage": "Series A (LLM Data)",
+    "tags": ["RAG", "Data Frameworks", "Python", "TypeScript"]
+  },
+  {
+    "name": "Modal Labs",
+    "slug": "modal",
+    "ats": "ashby",
+    "stage": "Series A (AI Compute)",
+    "tags": ["AI Infra", "Cloud GPUs", "Python"]
+  },
+  {
+    "name": "Braintrust",
+    "slug": "braintrust",
+    "ats": "ashby",
+    "stage": "Series A (AI Eval)",
+    "tags": ["AI Observability", "Prompt Eval", "TypeScript"]
+  },
+  {
+    "name": "Cartesia",
+    "slug": "cartesia",
+    "ats": "ashby",
+    "stage": "Seed (Voice AI)",
+    "tags": ["Speech AI", "Real-Time Audio", "PyTorch"]
+  },
+  {
+    "name": "Vapi",
+    "slug": "vapi",
+    "ats": "ashby",
+    "stage": "Seed (Voice Agents)",
+    "tags": ["Voice AI", "Telephony", "Agents"]
+  },
+  {
+    "name": "Baseten",
+    "slug": "baseten",
+    "ats": "ashby",
+    "stage": "Series B (AI Inference)",
+    "tags": ["Model Serving", "Inference", "Python"]
+  },
+  {
+    "name": "LangChain",
+    "slug": "langchain",
+    "ats": "greenhouse",
+    "stage": "Series A (Agent Framework)",
+    "tags": ["LangChain", "LangGraph", "Python", "TypeScript"]
+  },
+  {
+    "name": "Pinecone",
+    "slug": "pinecone",
+    "ats": "greenhouse",
+    "stage": "Growth (Vector DB)",
+    "tags": ["Vector Database", "RAG", "Search"]
+  },
+  {
+    "name": "Anyscale",
+    "slug": "anyscale",
+    "ats": "lever",
+    "stage": "Series B (Distributed AI)",
+    "tags": ["Ray", "Distributed Training", "Python"]
+  },
+  {
+    "name": "Hugging Face",
+    "slug": "huggingface",
+    "ats": "lever",
+    "stage": "High Growth AI",
+    "tags": ["Open Source AI", "Transformers", "PyTorch"]
+  },
+  {
+    "name": "Scale AI",
+    "slug": "scaleai",
+    "ats": "greenhouse",
+    "stage": "Growth (AI Data)",
+    "tags": ["Data Infrastructure", "RLHF", "Evaluation"]
+  },
+  {
+    "name": "Cloudflare",
+    "slug": "cloudflare",
+    "ats": "greenhouse",
+    "stage": "Infrastructure",
+    "tags": ["AI Workers", "Edge Compute", "TypeScript"]
+  },
+  {
+    "name": "Anthropic",
+    "slug": "anthropic",
+    "ats": "greenhouse",
+    "stage": "Frontier AI Lab",
+    "tags": ["Claude", "Alignment", "LLM Research"]
+  }
+]
