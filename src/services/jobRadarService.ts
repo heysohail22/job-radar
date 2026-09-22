@@ -1,4 +1,7 @@
 import type { ResumeDataType } from "../resumeData";
+import { getJobsFromBackend, evaluateJobBackend } from "./api";
+
+
 
 
 export interface JobPosting {
@@ -370,15 +373,24 @@ export async function fetchFirecrawlJobs(apiKey: string, query: string = "Gen AI
 }
 
 
-/**
- * Main Fetcher Engine - Combines Public ATS Feeds, Firecrawl, and Curated High-Value Listings
- */
+
+
+
 export async function fetchAllGenAiJobs(
   firecrawlApiKey: string,
   searchQuery: string = "",
   minMatchScore: number = 0,
   fetchLive: boolean = false
 ): Promise<JobPosting[]> {
+  try {
+    const backendJobs = await getJobsFromBackend(searchQuery, minMatchScore, fetchLive);
+    if (backendJobs && backendJobs.length > 0) {
+      return backendJobs;
+    }
+  } catch {
+    // Fallback to local service if backend unreachable
+  }
+
   let allJobs: JobPosting[] = [...CURATED_FEATURED_JOBS];
 
   // Only make live network calls to Firecrawl & ATS feeds if fetchLive is explicitly true!
@@ -429,6 +441,7 @@ export async function fetchAllGenAiJobs(
       // fallback gracefully to curated jobs
     }
   }
+
 
 
   // Apply Search Query Filter
@@ -496,15 +509,33 @@ function calculateKeywordMatchScore(text: string): number {
   return Math.min(score, 98);
 }
 
+
+
+
 export async function evaluateJobWithAI(
   job: JobPosting,
   resume: ResumeDataType,
   provider: "gemini" | "groq",
   apiKey: string
 ): Promise<{ matchScore: number; matchReason: string }> {
+  try {
+    const candidateSkills = resume.skills.flatMap((s) => s.items);
+    return await evaluateJobBackend(
+      job.title,
+      job.company,
+      job.description,
+      candidateSkills,
+      provider,
+      apiKey
+    );
+  } catch {
+    // Fallback to local evaluation
+  }
+
   if (!apiKey || !apiKey.trim()) {
     return { matchScore: job.matchScore, matchReason: job.matchReason };
   }
+
 
   const prompt = `Analyze this Gen AI Internship posting against the candidate's resume and return ONLY a JSON object:
 Candidate Resume Summary: Title: ${resume.title}, Skills: ${JSON.stringify(resume.skills)}, Summary: ${resume.summary}
