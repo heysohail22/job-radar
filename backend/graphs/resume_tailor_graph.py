@@ -1,4 +1,7 @@
 import json
+import asyncio
+import re
+import ast
 from typing import Dict, Any, TypedDict
 from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -64,7 +67,6 @@ CANDIDATE BASE RESUME DATA:
         ]
         res = await asyncio.to_thread(llm.invoke, messages)
         raw_text = res.content if isinstance(res.content, str) else str(res.content)
-        import re, ast
         json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
         content_to_parse = json_match.group(0) if json_match else raw_text
         try:
