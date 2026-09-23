@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from typing import List, Optional
 from schemas import JobPosting, ScrapeRequest, ApplyRequest
-from db import fetch_jobs_from_db, save_jobs_to_db, toggle_job_applied_in_db
+from db import fetch_jobs_from_db, save_jobs_to_db, toggle_job_applied_in_db, get_applied_jobs_from_db
 from graphs.job_radar_graph import job_radar_graph
 from config import settings
 
@@ -31,10 +31,15 @@ async def get_jobs(
     # Return cached jobs from database (returns empty list if none, without auto-scraping)
     return fetch_jobs_from_db(search=search, min_score=min_score, applied=applied)
 
+@router.get("/applied", response_model=List[dict])
+async def get_applied():
+    """Fetch all applied jobs stored in Supabase."""
+    return get_applied_jobs_from_db()
+
 @router.post("/{job_id}/apply", response_model=dict)
 async def toggle_apply(job_id: str, req: ApplyRequest):
-    """Mark or unmark a job as applied."""
-    success = toggle_job_applied_in_db(job_id, req.is_applied)
+    """Mark or unmark a job as applied in Supabase."""
+    success = toggle_job_applied_in_db(job_id, req.is_applied, req.job)
     return {
         "success": success,
         "jobId": job_id,

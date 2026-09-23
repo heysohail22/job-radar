@@ -26,14 +26,49 @@ def init_db():
         print(f"Warning: Supabase table initialization check failed: {e}")
 
 def save_jobs_to_db(jobs: List[JobPosting]):
-    """Upsert jobs directly into Supabase 'jobs' table."""
+    """Upsert jobs into Supabase 'jobs' table with intelligent deduplication by company, title, and url."""
     if not jobs:
         return
     client = get_supabase_client()
+    
+    # Retrieve existing job identifiers to prevent duplicates across multiple fetches
+    existing_key_to_id = {}
+    try:
+        res = client.table("jobs").select("id, company, title, url").execute()
+        for row in (res.data or []):
+            cid = row.get("id")
+            c = (row.get("company") or "").strip().lower()
+            t = (row.get("title") or "").strip().lower()
+            u = (row.get("url") or "").strip().lower()
+            if c and t:
+                existing_key_to_id[f"{c}::{t}"] = cid
+            if u:
+                existing_key_to_id[f"url::{u}"] = cid
+    except Exception as e:
+        print(f"Note: existing jobs lookup skipped: {e}")
+
     records = []
+    seen_in_batch = set()
+
     for job in jobs:
+        c = (job.company or "").strip().lower()
+        t = (job.title or "").strip().lower()
+        u = (job.url or "").strip().lower()
+        key = f"{c}::{t}"
+        url_key = f"url::{u}" if u else None
+
+        # Prevent duplicate entries within the current batch
+        if key in seen_in_batch:
+            continue
+        seen_in_batch.add(key)
+        if url_key:
+            seen_in_batch.add(url_key)
+
+        # Reuse existing DB id if job was already fetched previously
+        target_id = existing_key_to_id.get(key) or (existing_key_to_id.get(url_key) if url_key else None) or job.id
+
         records.append({
-            "id": job.id,
+            "id": target_id,
             "company": job.company,
             "title": job.title,
             "location": job.location or "Remote",
@@ -50,25 +85,71 @@ def save_jobs_to_db(jobs: List[JobPosting]):
             "is_fresher": bool(job.is_fresher)
         })
     
-    try:
-        client.table("jobs").upsert(records, on_conflict="id").execute()
-    except Exception as e:
-        print(f"Error upserting jobs to Supabase: {e}")
+    if records:
+        try:
+            client.table("jobs").upsert(records, on_conflict="id").execute()
+        except Exception as e:
+            print(f"Error upserting jobs to Supabase: {e}")
 
-def toggle_job_applied_in_db(job_id: str, is_applied: bool) -> bool:
-    """Updates the applied status of a job in Supabase."""
+def toggle_job_applied_in_db(job_id: str, is_applied: bool, job_data: Optional[dict] = None) -> bool:
+    """Updates the applied status in Supabase (supporting both jobs table columns and dedicated applied_jobs table)."""
     client = get_supabase_client()
     from datetime import datetime, timezone
     now_str = datetime.now(timezone.utc).isoformat() if is_applied else None
+
+    # 1. Update jobs table if is_applied column exists
     try:
         client.table("jobs").update({
             "is_applied": is_applied,
             "applied_at": now_str
         }).eq("id", job_id).execute()
-        return True
     except Exception as e:
-        print(f"Note: Supabase applied status update: {e}")
-        return False
+        pass
+
+    # 2. Insert or remove from dedicated applied_jobs table if it exists
+    try:
+        if is_applied:
+            record = {
+                "job_id": job_id,
+                "applied_at": now_str,
+                "status": "Applied"
+            }
+            if job_data:
+                record.update({
+                    "company": job_data.get("company", ""),
+                    "title": job_data.get("title", ""),
+                    "location": job_data.get("location", ""),
+                    "url": job_data.get("url", ""),
+                    "source": job_data.get("source", "")
+                })
+            client.table("applied_jobs").upsert(record, on_conflict="job_id").execute()
+        else:
+            client.table("applied_jobs").delete().eq("job_id", job_id).execute()
+    except Exception as e:
+        pass
+
+    return True
+
+def get_applied_jobs_from_db() -> List[dict]:
+    """Fetches all applied jobs recorded in Supabase."""
+    client = get_supabase_client()
+    # 1. Try dedicated applied_jobs table first
+    try:
+        res = client.table("applied_jobs").select("*").execute()
+        if res.data:
+            return res.data
+    except Exception:
+        pass
+
+    # 2. Fall back to jobs table where is_applied is true
+    try:
+        res = client.table("jobs").select("*").eq("is_applied", True).execute()
+        if res.data:
+            return res.data
+    except Exception:
+        pass
+
+    return []
 
 def fetch_jobs_from_db(
     search: Optional[str] = None, 

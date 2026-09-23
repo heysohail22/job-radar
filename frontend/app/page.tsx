@@ -77,6 +77,70 @@ export default function Home() {
   const [googleQuery, setGoogleQuery] = useState<string>("Gen AI Intern India");
   const [isSearchingGoogle, setIsSearchingGoogle] = useState<boolean>(false);
 
+  // Helper to merge newly fetched/scraped jobs with existing jobs:
+  // 1. Strictly deduplicates by ID, normalized Company+Title, and URL (guarantees zero duplicate cards)
+  // 2. Preserves already applied status so applied jobs stay safely in "Applied Jobs" and never reappear in "Active Radar"
+  const mergeJobsPreservingApplied = (incoming: JobPostingItem[], current: JobPostingItem[]): JobPostingItem[] => {
+    const currentAppliedMap = new Map<string, JobPostingItem>();
+    const currentAppliedKeys = new Set<string>();
+
+    current.forEach((j) => {
+      if (j.isApplied) {
+        currentAppliedMap.set(j.id, j);
+        const compTitleKey = `${(j.company || "").trim().toLowerCase()}::${(j.title || "").trim().toLowerCase()}`;
+        currentAppliedKeys.add(compTitleKey);
+        if (j.url) currentAppliedKeys.add(j.url.trim().toLowerCase());
+      }
+    });
+
+    const seenKeys = new Set<string>();
+    const result: JobPostingItem[] = [];
+
+    const getKeys = (j: JobPostingItem) => {
+      const compTitleKey = `${(j.company || "").trim().toLowerCase()}::${(j.title || "").trim().toLowerCase()}`;
+      const urlKey = j.url ? j.url.trim().toLowerCase() : "";
+      return { compTitleKey, urlKey };
+    };
+
+    // 1. Add incoming jobs, preserving applied status if candidate already marked it
+    for (const job of incoming) {
+      const { compTitleKey, urlKey } = getKeys(job);
+      if (seenKeys.has(job.id) || seenKeys.has(compTitleKey) || (urlKey && seenKeys.has(urlKey))) {
+        continue;
+      }
+      seenKeys.add(job.id);
+      seenKeys.add(compTitleKey);
+      if (urlKey) seenKeys.add(urlKey);
+
+      const wasApplied =
+        currentAppliedMap.has(job.id) ||
+        currentAppliedKeys.has(compTitleKey) ||
+        (urlKey ? currentAppliedKeys.has(urlKey) : false);
+
+      const existingApplied = currentAppliedMap.get(job.id);
+
+      result.push({
+        ...job,
+        isApplied: wasApplied || Boolean(job.isApplied),
+        appliedAt: existingApplied?.appliedAt || job.appliedAt,
+      });
+    }
+
+    // 2. Keep existing jobs that were not in incoming batch (including all applied jobs)
+    for (const job of current) {
+      const { compTitleKey, urlKey } = getKeys(job);
+      if (seenKeys.has(job.id) || seenKeys.has(compTitleKey) || (urlKey && seenKeys.has(urlKey))) {
+        continue;
+      }
+      seenKeys.add(job.id);
+      seenKeys.add(compTitleKey);
+      if (urlKey) seenKeys.add(urlKey);
+      result.push(job);
+    }
+
+    return result;
+  };
+
   // Search Google Jobs index (Indeed, LinkedIn, Shine, Lever, Jobrapido)
   const handleSearchGoogleJobs = async (customQuery?: string) => {
     const queryToUse = customQuery || googleQuery;
@@ -96,15 +160,14 @@ export default function Home() {
       if (res.ok) {
         const liveGoogleJobs: JobPostingItem[] = await res.json();
         if (Array.isArray(liveGoogleJobs) && liveGoogleJobs.length > 0) {
-          const existingIds = new Set(jobs.map((j) => j.id));
-          const combined = [
-            ...liveGoogleJobs.filter((j: JobPostingItem) => !existingIds.has(j.id)),
-            ...jobs,
-          ];
-          updateJobs(combined);
+          const merged = mergeJobsPreservingApplied(liveGoogleJobs, jobs);
+          const newAdded = merged.length - jobs.length;
+          updateJobs(merged);
           setIsGoogleModalOpen(false);
           setStatusFeedback({
-            message: `Discovered & saved ${liveGoogleJobs.length} Google Jobs!`,
+            message: newAdded > 0 
+              ? `Discovered ${newAdded} new Google Jobs! (Deduplicated repeats)`
+              : `All ${liveGoogleJobs.length} Google Jobs already up to date in radar.`,
             type: "success",
           });
           setTimeout(() => setStatusFeedback(null), 5000);
@@ -160,21 +223,45 @@ export default function Home() {
 
     try {
       const baseUrl = getBackendUrl();
-      // Fast fetch from backend database/cache (instant response)
-      const res = await fetch(`${baseUrl}/api/jobs`, {
-        signal: controller.signal,
-      });
+      // Fast fetch from backend database/cache + applied records
+      const [res, appliedRes] = await Promise.all([
+        fetch(`${baseUrl}/api/jobs`, { signal: controller.signal }),
+        fetch(`${baseUrl}/api/jobs/applied`, { signal: controller.signal }).catch(() => null),
+      ]);
 
       if (!res.ok) {
         throw new Error(`Backend responded with status ${res.status}`);
       }
 
       const liveData: JobPostingItem[] = await res.json();
+      let appliedDbList: any[] = [];
+      if (appliedRes && appliedRes.ok) {
+        try {
+          appliedDbList = await appliedRes.json();
+        } catch {}
+      }
+
       if (Array.isArray(liveData) && liveData.length > 0) {
-        updateJobs(liveData);
+        // Overlay any applied jobs stored in Supabase
+        const appliedDbIds = new Set(appliedDbList.map((a: any) => a.job_id || a.id));
+        const enrichedLiveData = liveData.map((job) => {
+          if (appliedDbIds.has(job.id)) {
+            const foundApplied = appliedDbList.find((a: any) => (a.job_id || a.id) === job.id);
+            return {
+              ...job,
+              isApplied: true,
+              appliedAt: foundApplied?.applied_at || job.appliedAt || new Date().toISOString(),
+            };
+          }
+          return job;
+        });
+
+        // Merge with existing jobs while preserving applied status & removing any duplicate repeats
+        const merged = mergeJobsPreservingApplied(enrichedLiveData, jobs);
+        updateJobs(merged);
         if (!silent) {
           setStatusFeedback({
-            message: `Fetched ${liveData.length} jobs from backend & saved locally!`,
+            message: `Synced ${merged.length} opportunities! (Deduplicated, applied preserved)`,
             type: "success",
           });
         }
@@ -215,9 +302,13 @@ export default function Home() {
       if (res.ok) {
         const liveData = await res.json();
         if (Array.isArray(liveData) && liveData.length > 0) {
-          updateJobs(liveData);
+          const merged = mergeJobsPreservingApplied(liveData, jobs);
+          const newAdded = merged.length - jobs.length;
+          updateJobs(merged);
           setStatusFeedback({
-            message: `Scanned ATS and updated ${liveData.length} jobs locally.`,
+            message: newAdded > 0 
+              ? `Scanned ATS: added ${newAdded} new jobs! (Deduplicated)`
+              : `Scanned ATS: all ${merged.length} jobs already current.`,
             type: "success",
           });
           setTimeout(() => setStatusFeedback(null), 4000);
@@ -250,13 +341,15 @@ export default function Home() {
       if (res.ok) {
         const scraped = await res.json();
         if (Array.isArray(scraped) && scraped.length > 0) {
-          // Merge with existing jobs (prevent duplicates)
-          const existingIds = new Set(jobs.map((j) => j.id));
-          const combined = [...scraped.filter((j: JobPostingItem) => !existingIds.has(j.id)), ...jobs];
-          updateJobs(combined);
+          // Merge with existing jobs (prevent duplicates & preserve applied status)
+          const merged = mergeJobsPreservingApplied(scraped, jobs);
+          const newAdded = merged.length - jobs.length;
+          updateJobs(merged);
           setIsFirecrawlOpen(false);
           setStatusFeedback({
-            message: `Scraped ${scraped.length} new jobs and saved locally!`,
+            message: newAdded > 0
+              ? `Scraped ${newAdded} new unique jobs!`
+              : `Scraped portals: all positions already up to date in radar.`,
             type: "success",
           });
           setTimeout(() => setStatusFeedback(null), 4000);
@@ -265,14 +358,14 @@ export default function Home() {
     } catch (err) {
       console.error("Firecrawl scrape error:", err);
       setStatusFeedback({
-        message: "Firecrawl scrape failed.",
+        message: "Scrape request failed. Please check Firecrawl API key.",
         type: "error",
       });
       setTimeout(() => setStatusFeedback(null), 4000);
-    } finally {
-      setIsScanning(false);
-    }
-  };
+      } finally {
+        setIsScanning(false);
+      }
+    };
 
   // Clear locally stored jobs
   const handleClearLocalJobs = () => {
@@ -316,10 +409,11 @@ export default function Home() {
 
     try {
       const baseUrl = getBackendUrl();
+      const targetJob = jobs.find((j) => j.id === jobId);
       await fetch(`${baseUrl}/api/jobs/${jobId}/apply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_applied: isApplied }),
+        body: JSON.stringify({ isApplied: isApplied, job: targetJob }),
       });
     } catch (err) {
       console.warn("Backend toggle apply status failed (persisted in localStorage):", err);

@@ -25,6 +25,7 @@ class JobPosting(BaseModel):
 
 class ApplyRequest(BaseModel):
     is_applied: bool = Field(alias="isApplied", default=True)
+    job: Optional[dict] = None
 
 class ScrapeRequest(BaseModel):
     search_query: Optional[str] = "Gen AI Intern"

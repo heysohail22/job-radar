@@ -179,8 +179,11 @@ Text:
             is_india=is_ind,
             is_fresher=is_intern
         )
-        
-        job_id = f"google-{re.sub(r'[^a-zA-Z0-9]', '', comp.lower())[:15]}-{int(time.time())}-{i}"
+        import hashlib
+        clean_key = f"{comp.strip().lower()}::{title.strip().lower()}"
+        slug_hash = hashlib.md5(clean_key.encode()).hexdigest()[:10]
+        clean_comp = re.sub(r'[^a-zA-Z0-9]', '', comp.lower())[:12]
+        job_id = f"google-{clean_comp}-{slug_hash}"
         
         posting = JobPosting(
             id=job_id,
