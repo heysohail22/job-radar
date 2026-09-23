@@ -1,83 +1,61 @@
-# ✨ Agentic AI Resume Workspace & Live AI Tailor
+# 🎯 JobRadar — Autonomous AI Job Discovery & Resume Tailoring
 
-A modern, high-performance **Agentic AI Resume Builder & Real-Time Job Tailoring Workspace**. Built with React 19, Vite, TailwindCSS, and integrated with **Groq LPUs** (`gpt-oss-120b`, `llama-3.3-70b`) and **Google Gemini** for instant ATS resume optimization.
-
----
-
-## 🚀 Features
-
-- 🧠 **Groq & Gemini AI Resume Tailoring:** Paste any target Job Description (JD) to automatically align summary, technical skills, and project bullet points with a target 95%+ ATS Keyword Match Rate.
-- ⚡ **Supported AI Models:**
-  - `openai/gpt-oss-120b` (Groq 120B Open Source)
-  - `openai/gpt-oss-20b` (Groq 20B Open Source)
-  - `llama-3.3-70b-versatile` (Meta Llama 3.3 70B)
-  - `qwen/qwen3.6-27b` (Alibaba Qwen 27B)
-  - `gemini-2.5-flash` (Google Gemini 2.5 Flash)
-  - `gemini-3.5-flash-lite` (Google Gemini 3.5 Flash Lite)
-- 🖨️ **Strict 1-Page PDF Export Engine:** Enforces print media CSS rules to guarantee zero overflow to page 2 and zero white gaps.
-- 🎛️ **Precision Spacing Stepper Controls:** Fine-tune `Font Size`, `Line Height`, `Section Gap`, and `Page Padding` using `[−]` / `[＋]` buttons or direct numerical inputs.
-- 📱 **Mobile Touch-Optimized Layout:** Dual-pane side-by-side workspace on desktop, responsive touch-optimized 2x2 grid controls on mobile screens.
+A modern, full-stack **Autonomous AI Job Discovery Radar & Real-Time Resume Tailoring Platform**. Combines autonomous ATS web scrapers (Greenhouse, Lever, Ashby, Workday) with an interactive Next.js resume workspace and LLM-powered resume tailoring (Groq LPUs & Google Gemini).
 
 ---
 
-## 🔑 Required API Keys Setup
+## 🚀 Architecture Overview
 
-To use the AI tailoring features, set up your environment variables by copying `.env.example` to `.env`:
-
-```bash
-cp .env.example .env
-```
-
-### 1. Groq API Key (`VITE_GROQ_API_KEY`)
-- **Cost:** Free Tier
-- **Get Key:** [console.groq.com/keys](https://console.groq.com/keys)
-- **Powers:** `openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `qwen/qwen3.6-27b`
-
-### 2. Google Gemini API Key (`VITE_GEMINI_API_KEY`)
-- **Cost:** Free Tier
-- **Get Key:** [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-- **Powers:** `gemini-2.5-flash`, `gemini-3.5-flash-lite`
-
-`.env` format:
-
-```env
-VITE_GROQ_API_KEY=gsk_your_groq_key_here
-VITE_GEMINI_API_KEY=AIzaSy_your_gemini_key_here
-```
+- **Frontend (`frontend/`)**: Next.js 16 (Turbopack), React 19, TailwindCSS v4, Lucide Icons, Framer Motion.
+  - Interactive live-editable Resume Document.
+  - Structured Resume Editor Modal with local storage persistence.
+  - ATS Keyword Matcher comparing user skills against job requirements.
+  - Live Jobs Radar feed with priority sorting, tech stack tags, and search/filters.
+- **Backend (`backend/`)**: FastAPI, Python 3.12, SQLite database (`jobs_radar.db`), LangGraph agentic workflows.
+  - Automated ATS board scrapers & Firecrawl integrations.
+  - Real-time job ingestion, deduplication, and keyword relevance scoring.
 
 ---
 
-## 🛠️ Local Development & Mobile Testing
+## 🛠️ Quick Start
 
-### 1. Install Dependencies
+### 1. Install & Run Frontend
+From the root directory:
 ```bash
-pnpm install
-# or npm install
-```
-
-### 2. Run Local Dev Server
-```bash
+# Start Next.js frontend dev server (runs on http://localhost:3000)
 pnpm dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 3. Test on Mobile Phone (Same Wi-Fi Network)
-To test on your phone connected to the same Wi-Fi:
+Or build for production:
 ```bash
-pnpm dev --host
+pnpm build
 ```
-Open `http://YOUR_LOCAL_IP:5173` on your mobile browser.
+
+### 2. Run Backend
+In a separate terminal:
+```bash
+# Start FastAPI backend (runs on http://localhost:8000)
+pnpm backend
+```
+*(Requires Python 3.12+ and `uv`)*
 
 ---
 
-## 📦 Build for Production
+## 🔑 Environment Variables
 
-```bash
-pnpm build
+Copy `.env.example` to `.env` in the root / backend directory:
+
+```env
+# AI Models (Groq LPUs & Google Gemini)
+GROQ_API_KEY=gsk_your_groq_key_here
+GEMINI_API_KEY=AIzaSy_your_gemini_key_here
+
+# Optional: Firecrawl API Key for web scraping
+FIRECRAWL_API_KEY=fc_your_firecrawl_key_here
 ```
 
 ---
 
 ## 📄 License
 
-MIT License. Developed by **Sohail Islam** ([heysohil22](https://github.com/heysohail22)).
+MIT License. Developed by **Sohail Islam** ([heysohail22](https://github.com/heysohail22)).
