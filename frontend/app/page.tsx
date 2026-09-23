@@ -420,6 +420,28 @@ export default function Home() {
     }
   };
 
+  // Permanently delete a job from radar and Supabase
+  const handleDeleteJob = async (jobId: string) => {
+    const updated = jobs.filter((j) => j.id !== jobId);
+    updateJobs(updated);
+    if (selectedJob?.id === jobId) {
+      setSelectedJob(updated[0] || null);
+    }
+    setStatusFeedback({
+      message: "Job permanently removed from Supabase & radar.",
+      type: "info",
+    });
+    setTimeout(() => setStatusFeedback(null), 3000);
+
+    try {
+      await fetch(`${getBackendUrl()}/api/jobs/${jobId}`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.warn("Delete request failed:", err);
+    }
+  };
+
   const handleSelectJob = (job: JobPostingItem) => {
     setSelectedJob(job);
     if (typeof window !== "undefined" && window.innerWidth < 768) {
@@ -502,6 +524,7 @@ export default function Home() {
                   activeFeedTab={feedTab}
                   onFeedTabChange={setFeedTab}
                   backendUrl={getBackendUrl()}
+                  onDeleteJob={handleDeleteJob}
                 />
               </div>
 

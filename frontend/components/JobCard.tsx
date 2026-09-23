@@ -1,5 +1,5 @@
 import React from "react";
-import { MapPin, Clock, Globe2, CheckCircle2 } from "lucide-react";
+import { MapPin, Clock, Globe2, CheckCircle2, Trash2 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos";
 import type { JobPostingItem } from "../lib/types";
 
@@ -8,6 +8,7 @@ interface JobCardProps {
   isSelected: boolean;
   onSelect: () => void;
   onToggleApply?: (e: React.MouseEvent) => void;
+  onDelete?: (e: React.MouseEvent) => void;
 }
 
 export const JobCard: React.FC<JobCardProps> = ({
@@ -15,6 +16,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   isSelected,
   onSelect,
   onToggleApply,
+  onDelete,
 }) => {
   const isIndia =
     job.isIndia ||
@@ -125,30 +127,45 @@ export const JobCard: React.FC<JobCardProps> = ({
             <span>{job.source}</span>
           </span>
 
-          {onToggleApply && (
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleApply(e);
-              }}
-              title={
-                job.isApplied
-                  ? "Marked as Applied (Click to move back to Radar)"
-                  : "Mark as Applied (moves to Applied Jobs)"
-              }
-              className={`
-                flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all border
-                ${
+          <div className="flex items-center gap-1.5">
+            {onToggleApply && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleApply(e);
+                }}
+                title={
                   job.isApplied
-                    ? "bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40 hover:bg-[#EF4444]/15 hover:text-[#F87171] hover:border-[#EF4444]/40"
-                    : "bg-[#181F30] text-[#AAB4C5] border-[#232B3B] hover:text-[#34D399] hover:border-[#10B981]/50 hover:bg-[#10B981]/10"
+                    ? "Marked as Applied (Click to move back to Radar)"
+                    : "Mark as Applied (moves to Applied Jobs)"
                 }
-              `}
-            >
-              <CheckCircle2 size={11} className={job.isApplied ? "text-[#34D399]" : "text-[#667085]"} />
-              <span>{job.isApplied ? "Applied ✓" : "Mark Applied"}</span>
-            </span>
-          )}
+                className={`
+                  flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold cursor-pointer transition-all border
+                  ${
+                    job.isApplied
+                      ? "bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40 hover:bg-[#EF4444]/15 hover:text-[#F87171] hover:border-[#EF4444]/40"
+                      : "bg-[#181F30] text-[#AAB4C5] border-[#232B3B] hover:text-[#34D399] hover:border-[#10B981]/50 hover:bg-[#10B981]/10"
+                  }
+                `}
+              >
+                <CheckCircle2 size={11} className={job.isApplied ? "text-[#34D399]" : "text-[#667085]"} />
+                <span>{job.isApplied ? "Applied ✓" : "Mark Applied"}</span>
+              </span>
+            )}
+
+            {job.isApplied && onDelete && (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(e);
+                }}
+                title="Permanently delete from database"
+                className="flex items-center justify-center p-1 rounded-lg text-[#64748B] hover:text-rose-400 bg-[#181F30] hover:bg-rose-500/20 border border-[#232B3B] hover:border-rose-500/40 cursor-pointer transition-all"
+              >
+                <Trash2 size={11} />
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -40,6 +40,7 @@ interface JobsFeedProps {
   onFeedTabChange?: (tab: "radar" | "applied") => void;
   onOpenGoogleJobs?: () => void;
   backendUrl?: string;
+  onDeleteJob?: (jobId: string) => void;
 }
 
 const CORE_FACETS: FilterFacet[] = [
@@ -70,6 +71,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   onFeedTabChange,
   onOpenGoogleJobs,
   backendUrl = "http://localhost:8000",
+  onDeleteJob,
 }) => {
   const [internalTab, setInternalTab] = useState<"radar" | "applied">("radar");
   const currentTab = controlledTab ?? internalTab;
@@ -575,6 +577,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
               isSelected={job.id === selectedJobId}
               onSelect={() => onSelectJob(job)}
               onToggleApply={onToggleApply ? () => onToggleApply(job.id, !job.isApplied) : undefined}
+              onDelete={onDeleteJob ? () => onDeleteJob(job.id) : undefined}
             />
           ))}
         </div>

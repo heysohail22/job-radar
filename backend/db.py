@@ -236,4 +236,22 @@ def fetch_jobs_from_db(
         
     return jobs
 
+def delete_job_from_db(job_id: str) -> bool:
+    """Permanently deletes a job from Supabase 'jobs' table and any applied tracking."""
+    client = get_supabase_client()
+    success = False
+    try:
+        client.table("jobs").delete().eq("id", job_id).execute()
+        success = True
+    except Exception as e:
+        print(f"Error deleting job {job_id} from jobs table: {e}")
+
+    try:
+        client.table("applied_jobs").delete().eq("job_id", job_id).execute()
+        success = True
+    except Exception:
+        pass
+
+    return success
+
 

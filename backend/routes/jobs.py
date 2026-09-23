@@ -46,6 +46,16 @@ async def toggle_apply(job_id: str, req: ApplyRequest):
         "isApplied": req.is_applied
     }
 
+@router.delete("/{job_id}", response_model=dict)
+async def delete_job(job_id: str):
+    """Permanently delete a job from Supabase."""
+    from db import delete_job_from_db
+    success = delete_job_from_db(job_id)
+    return {
+        "success": success,
+        "jobId": job_id
+    }
+
 
 @router.post("/scrape", response_model=List[JobPosting])
 async def trigger_scrape(req: ScrapeRequest):
