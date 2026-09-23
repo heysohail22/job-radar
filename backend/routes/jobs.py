@@ -20,7 +20,7 @@ async def get_jobs(
     if not cached_jobs or force_live:
         graph_input = {
             "firecrawl_key": settings.FIRECRAWL_API_KEY,
-            "search_query": search or "Gen AI Intern",
+            "search_query": search or "",
             "force_live": force_live,
             "jobs": []
         }
@@ -29,7 +29,7 @@ async def get_jobs(
         
         if fetched_jobs:
             save_jobs_to_db(fetched_jobs)
-            return fetched_jobs
+            return fetch_jobs_from_db(search=search, min_score=min_score)
 
     return cached_jobs
 

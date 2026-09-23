@@ -48,3 +48,9 @@ __pycache__/
 *.db
 *.sqlite3
 
+# Next.js & Vercel ignores
+.next/
+out/
+build/
+.vercel
+*.pem
