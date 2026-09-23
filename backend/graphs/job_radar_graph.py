@@ -11,6 +11,7 @@ from services.ats_scraper import (
     load_startups_directory,
 )
 from services.firecrawl_service import fetch_firecrawl_yc_jobs
+from services.google_jobs_service import scrape_google_jobs
 
 class JobRadarState(TypedDict):
     firecrawl_key: str
@@ -34,6 +35,9 @@ async def fetch_live_node(state: JobRadarState) -> Dict[str, Any]:
     
     # Always include live Y Combinator batch startups
     tasks.append(fetch_yc_startup_jobs())
+    
+    # Include live Google Jobs index search
+    tasks.append(scrape_google_jobs(query or "Gen AI Intern India"))
     
     for s in startups:
         ats = (s.get("ats") or "ashby").lower()

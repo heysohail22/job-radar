@@ -6,7 +6,7 @@ import { Header } from "../components/Header";
 import { JobsFeed } from "../components/JobsFeed";
 import { JobDetailPane } from "../components/JobDetailPane";
 import { ResumeView } from "../components/ResumeView";
-import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle, Home as HomeIcon, FileText } from "lucide-react";
+import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle, Home as HomeIcon, FileText, Search } from "lucide-react";
 import type { JobPostingItem } from "../lib/types";
 import { defaultJobs } from "../lib/defaultJobs";
 
@@ -71,6 +71,64 @@ export default function Home() {
   const [isFirecrawlOpen, setIsFirecrawlOpen] = useState<boolean>(false);
   const [firecrawlKey, setFirecrawlKey] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState<string>("Gen AI Intern YC");
+
+  // Google Jobs modal state
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
+  const [googleQuery, setGoogleQuery] = useState<string>("Gen AI Intern India");
+  const [isSearchingGoogle, setIsSearchingGoogle] = useState<boolean>(false);
+
+  // Search Google Jobs index (Indeed, LinkedIn, Shine, Lever, Jobrapido)
+  const handleSearchGoogleJobs = async (customQuery?: string) => {
+    const queryToUse = customQuery || googleQuery;
+    setIsSearchingGoogle(true);
+    setStatusFeedback({
+      message: `Searching Google Jobs for "${queryToUse}"...`,
+      type: "info",
+    });
+
+    try {
+      const res = await fetch(`${getBackendUrl()}/api/jobs/google-search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ search_query: queryToUse }),
+      });
+
+      if (res.ok) {
+        const liveGoogleJobs: JobPostingItem[] = await res.json();
+        if (Array.isArray(liveGoogleJobs) && liveGoogleJobs.length > 0) {
+          const existingIds = new Set(jobs.map((j) => j.id));
+          const combined = [
+            ...liveGoogleJobs.filter((j: JobPostingItem) => !existingIds.has(j.id)),
+            ...jobs,
+          ];
+          updateJobs(combined);
+          setIsGoogleModalOpen(false);
+          setStatusFeedback({
+            message: `Discovered & saved ${liveGoogleJobs.length} Google Jobs!`,
+            type: "success",
+          });
+          setTimeout(() => setStatusFeedback(null), 5000);
+        } else {
+          setStatusFeedback({
+            message: "No new Google Jobs found for this query.",
+            type: "info",
+          });
+          setTimeout(() => setStatusFeedback(null), 4000);
+        }
+      } else {
+        throw new Error(`Server returned ${res.status}`);
+      }
+    } catch (err) {
+      console.error("Google jobs search error:", err);
+      setStatusFeedback({
+        message: "Google Jobs search failed. Please verify backend.",
+        type: "error",
+      });
+      setTimeout(() => setStatusFeedback(null), 4000);
+    } finally {
+      setIsSearchingGoogle(false);
+    }
+  };
 
   // Helper to update jobs and sync to localStorage
   const updateJobs = (newJobs: JobPostingItem[]) => {
@@ -343,6 +401,7 @@ export default function Home() {
                   isFetching={isFetchingBackend}
                   onScanLive={handleScanLive}
                   onOpenFirecrawl={() => setIsFirecrawlOpen(true)}
+                  onOpenGoogleJobs={() => setIsGoogleModalOpen(true)}
                   isScanning={isScanning}
                   onClearLocalJobs={handleClearLocalJobs}
                   onToggleApply={handleToggleApply}
@@ -506,6 +565,108 @@ export default function Home() {
               >
                 {isScanning ? <Loader2 size={14} className="animate-spin" /> : <Flame size={14} />}
                 <span>{isScanning ? "Scraping Portals..." : "Start Scraping"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Jobs Discovery Modal */}
+      {isGoogleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-2xl bg-[#101828] border border-[#232B3B] p-5 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl text-left max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#4285F4]/20 via-[#EA4335]/20 to-[#34A853]/20 border border-[#4285F4]/30 text-[#4285F4] flex items-center justify-center font-bold">
+                  <Search size={18} className="text-[#38BDF8]" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-base text-[#F8F8F8]">Google Jobs Radar</h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#4285F4]/15 text-[#38BDF8] border border-[#4285F4]/30">
+                      Live Index
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#AAB4C5]">Search Indeed, LinkedIn, Shine, Lever & Jobrapido via Google</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsGoogleModalOpen(false)}
+                className="p-1 rounded-lg text-[#AAB4C5] hover:text-[#F8F8F8] transition-colors cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-[#AAB4C5] font-semibold mb-1.5">
+                  Target Search Query
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={googleQuery}
+                    onChange={(e) => setGoogleQuery(e.target.value)}
+                    placeholder="e.g. Gen AI Intern India, Epifi Product Builder, LLM Engineer"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-[#181F30] border border-[#232B3B] text-[#F8F8F8] placeholder-[#667085] focus:outline-hidden focus:border-[#38BDF8]"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isSearchingGoogle) {
+                        handleSearchGoogleJobs();
+                      }
+                    }}
+                  />
+                  <Search size={14} className="absolute left-3 top-3.5 text-[#667085]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#667085] text-[11px] font-semibold uppercase tracking-wider mb-2">
+                  Quick High-Match Presets
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    "Gen AI Intern India",
+                    "GenAI Product Builder Intern Bengaluru",
+                    "AI Engineer GenAI Applications India",
+                    "LangGraph Multi-Agent Remote",
+                    "Python FastAPI GenAI India",
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => {
+                        setGoogleQuery(preset);
+                        handleSearchGoogleJobs(preset);
+                      }}
+                      disabled={isSearchingGoogle}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#181F30] hover:bg-[#1E293B] border border-[#232B3B] hover:border-[#38BDF8]/40 text-[#E0E7FF] text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 text-left"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#080F18] border border-[#1E293B] text-[11px] text-[#94A3B8] leading-relaxed">
+                💡 <span className="font-semibold text-[#E2E8F0]">Direct Postings:</span> Filters specifically for roles open to Indian engineers or worldwide remote, extracting authentic job links from Greenhouse, Lever, Ashby, Indeed & LinkedIn.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                onClick={() => setIsGoogleModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#181F30] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] font-semibold text-xs transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleSearchGoogleJobs()}
+                disabled={isSearchingGoogle || !googleQuery.trim()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#4F46E5] hover:from-[#1D4ED8] hover:to-[#4338CA] text-white font-bold text-xs transition-all cursor-pointer shadow-md disabled:opacity-50"
+              >
+                {isSearchingGoogle ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                <span>{isSearchingGoogle ? "Searching Google Jobs..." : "Search & Ingest"}</span>
               </button>
             </div>
           </div>

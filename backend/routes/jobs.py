@@ -56,3 +56,12 @@ async def trigger_scrape(req: ScrapeRequest):
     if fetched_jobs:
         save_jobs_to_db(fetched_jobs)
     return fetched_jobs
+
+
+@router.post("/google-search", response_model=List[JobPosting])
+async def search_google(req: ScrapeRequest):
+    """Searches Google Jobs index (Indeed, LinkedIn, Shine, Jobrapido, Lever) using Firecrawl & Gemini Flash."""
+    from services.google_jobs_service import scrape_google_jobs
+    query = req.search_query or "Gen AI Intern India"
+    jobs = await scrape_google_jobs(query)
+    return jobs

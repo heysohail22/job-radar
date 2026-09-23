@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Sparkles, ChevronDown, Radar, Loader2, Flame, RefreshCw, Trash2, CheckCircle2 } from "lucide-react";
+import { Sparkles, ChevronDown, Radar, Loader2, Flame, RefreshCw, Trash2, CheckCircle2, Search } from "lucide-react";
 import { JobCard } from "./JobCard";
 import type { JobPostingItem } from "../lib/types";
 
@@ -18,6 +18,7 @@ interface JobsFeedProps {
   onToggleApply?: (jobId: string, isApplied: boolean) => void;
   activeFeedTab?: "radar" | "applied";
   onFeedTabChange?: (tab: "radar" | "applied") => void;
+  onOpenGoogleJobs?: () => void;
 }
 
 export const JobsFeed: React.FC<JobsFeedProps> = ({
@@ -35,6 +36,7 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   onToggleApply,
   activeFeedTab: controlledTab,
   onFeedTabChange,
+  onOpenGoogleJobs,
 }) => {
   const [internalTab, setInternalTab] = useState<"radar" | "applied">("radar");
   const currentTab = controlledTab ?? internalTab;
@@ -111,6 +113,19 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
                 <RefreshCw size={13} className="text-[#F8F8F8]" />
               )}
               <span>{isFetching ? "Fetching..." : "Fetch Jobs"}</span>
+            </button>
+          )}
+
+          {/* Google Jobs Live Search Button */}
+          {onOpenGoogleJobs && (
+            <button
+              onClick={onOpenGoogleJobs}
+              disabled={isFetching || isScanning}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#4285F4]/20 via-[#EA4335]/15 to-[#34A853]/20 hover:from-[#4285F4]/30 hover:to-[#34A853]/30 border border-[#4285F4]/40 text-xs font-bold text-[#F8F8F8] transition-all cursor-pointer disabled:opacity-50 shadow-xs"
+              title="Search and import live jobs from Google Jobs index"
+            >
+              <Search size={13} className="text-[#4285F4]" />
+              <span>Google Jobs</span>
             </button>
           )}
 
