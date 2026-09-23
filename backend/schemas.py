@@ -55,9 +55,11 @@ class TailorProject(BaseModel):
     tech: List[str]
     bullets: List[str]
 
+from config import settings
+
 class TailorRequest(BaseModel):
     job_description: str
-    model_id: str = "gemini-2.5-flash"
+    model_id: str = settings.GEMINI_MODEL
     groq_key: Optional[str] = None
     gemini_key: Optional[str] = None
     base_resume: Optional[dict] = None

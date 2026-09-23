@@ -65,3 +65,12 @@ async def search_google(req: ScrapeRequest):
     query = req.search_query or "Gen AI Intern India"
     jobs = await scrape_google_jobs(query)
     return jobs
+
+
+@router.post("/generate-filters")
+async def get_ai_filters(req: Optional[dict] = None):
+    """Generates dynamic, high-yield filter facets based on the current job dataset using Gemini."""
+    from services.ai_filter_service import generate_ai_filter_facets
+    facets = await generate_ai_filter_facets()
+    return {"facets": facets}
+

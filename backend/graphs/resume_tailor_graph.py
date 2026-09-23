@@ -38,7 +38,7 @@ class TailorState(TypedDict):
 async def run_llm_tailor_node(state: TailorState) -> Dict[str, Any]:
     req = state["request"]
     jd = req.job_description
-    model_id = req.model_id or "gemini-2.5-flash"
+    model_id = req.model_id or settings.GEMINI_MODEL
     base_resume = req.base_resume or {}
 
     gemini_key = req.gemini_key or settings.GEMINI_API_KEY

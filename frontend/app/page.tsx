@@ -407,6 +407,7 @@ export default function Home() {
                   onToggleApply={handleToggleApply}
                   activeFeedTab={feedTab}
                   onFeedTabChange={setFeedTab}
+                  backendUrl={getBackendUrl()}
                 />
               </div>
 

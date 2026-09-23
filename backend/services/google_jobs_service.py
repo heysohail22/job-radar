@@ -8,6 +8,7 @@ from typing import List, Optional, Dict, Any
 from dotenv import load_dotenv
 from firecrawl import FirecrawlApp
 
+from config import settings
 from schemas import JobPosting
 from db import save_jobs_to_db
 from services.ats_scraper import (
@@ -32,12 +33,12 @@ def get_firecrawl_client() -> Optional[FirecrawlApp]:
         return None
 
 async def call_gemini_json_api(prompt: str) -> Optional[List[Dict[str, Any]]]:
-    """Calls Gemini 2.5 Flash direct REST endpoint with native JSON schema output."""
-    gemini_key = os.getenv("GEMINI_API_KEY")
+    """Calls Gemini REST endpoint directly using settings.GEMINI_MODEL with native JSON schema output."""
+    gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
     if not gemini_key:
         return None
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={gemini_key}"
     payload = {
         "contents": [{
             "parts": [{"text": prompt}]
@@ -61,11 +62,11 @@ async def call_gemini_json_api(prompt: str) -> Optional[List[Dict[str, Any]]]:
                     return parsed
                 return []
             else:
-                print(f"Gemini API returned status {res.status_code}: {res.text[:200]}")
-                return None
+                print(f"Gemini API ({settings.GEMINI_MODEL}) returned status {res.status_code}: {res.text[:200]}")
         except Exception as e:
-            print(f"Gemini REST error: {repr(e)}")
-            return None
+            print(f"Gemini REST error ({settings.GEMINI_MODEL}): {repr(e)}")
+
+    return None
 
 async def scrape_google_jobs(query: str = "Gen AI Intern India") -> List[JobPosting]:
     """
