@@ -234,64 +234,64 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
         </div>
       </div>
 
-      {/* Vertical Job Cards Stack */}
-      <div className="space-y-3.5">
-        {currentTab === "applied" && appliedJobs.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] text-xs space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center text-[#10B981] mx-auto">
-              <CheckCircle2 size={24} />
-            </div>
-            <p className="font-bold text-sm text-[#F8F8F8]">No applied jobs yet</p>
-            <p className="text-[#667085] max-w-sm mx-auto">
-              Whenever you apply to a role from your Radar Feed, click <span className="text-[#34D399] font-bold">&quot;Mark as Applied&quot;</span>. It will automatically move out of your main dashboard and appear here!
-            </p>
-            <button
-              onClick={() => setTab("radar")}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#F8F8F8] font-bold text-xs transition-colors cursor-pointer"
-            >
-              <span>Back to Radar Feed</span>
-            </button>
+      {/* Job Cards Square Grid / Empty States */}
+      {currentTab === "applied" && appliedJobs.length === 0 ? (
+        <div className="p-12 text-center rounded-2xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] text-xs space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/30 flex items-center justify-center text-[#10B981] mx-auto">
+            <CheckCircle2 size={24} />
           </div>
-        ) : filteredJobs.length === 0 ? (
-          <div className="p-12 text-center rounded-2xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] text-xs space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#181F30] border border-[#232B3B] flex items-center justify-center text-[#6366F1] mx-auto">
-              <RefreshCw size={22} className={isFetching || isScanning ? "animate-spin" : ""} />
-            </div>
-            <p className="font-bold text-sm text-[#F8F8F8]">
-              {jobs.length === 0 ? "No jobs in local storage yet" : "No jobs match this filter"}
-            </p>
-            <p className="text-[#667085] max-w-sm mx-auto">
-              {jobs.length === 0
-                ? "Click below to fetch verified India & Worldwide Remote opportunities from your database."
-                : "Try selecting another filter pill above or switch back to All."}
-            </p>
-            {jobs.length === 0 && (
-              <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
-                {onFetchJobs && (
-                  <button
-                    onClick={onFetchJobs}
-                    disabled={isFetching || isScanning}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] text-white font-bold text-xs transition-all cursor-pointer shadow-lg shadow-[#4F46E5]/30 disabled:opacity-50 active:scale-95"
-                  >
-                    {isFetching ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
-                    <span>{isFetching ? "Fetching from Backend..." : "Fetch Jobs from Backend"}</span>
-                  </button>
-                )}
-                {onScanLive && (
-                  <button
-                    onClick={onScanLive}
-                    disabled={isScanning || isFetching}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#F8F8F8] font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
-                  >
-                    {isScanning ? <Loader2 size={14} className="animate-spin text-[#6366F1]" /> : <Sparkles size={14} className="text-[#6366F1]" />}
-                    <span>{isScanning ? "Scanning Live ATS..." : "Scan Live ATS Boards"}</span>
-                  </button>
-                )}
-              </div>
-            )}
+          <p className="font-bold text-sm text-[#F8F8F8]">No applied jobs yet</p>
+          <p className="text-[#667085] max-w-sm mx-auto">
+            Whenever you apply to a role from your Radar Feed, click <span className="text-[#34D399] font-bold">&quot;Mark as Applied&quot;</span>. It will automatically move out of your main dashboard and appear here!
+          </p>
+          <button
+            onClick={() => setTab("radar")}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#F8F8F8] font-bold text-xs transition-colors cursor-pointer"
+          >
+            <span>Back to Radar Feed</span>
+          </button>
+        </div>
+      ) : filteredJobs.length === 0 ? (
+        <div className="p-12 text-center rounded-2xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] text-xs space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-[#181F30] border border-[#232B3B] flex items-center justify-center text-[#6366F1] mx-auto">
+            <RefreshCw size={22} className={isFetching || isScanning ? "animate-spin" : ""} />
           </div>
-        ) : (
-          filteredJobs.map((job) => (
+          <p className="font-bold text-sm text-[#F8F8F8]">
+            {jobs.length === 0 ? "No jobs in local storage yet" : "No jobs match this filter"}
+          </p>
+          <p className="text-[#667085] max-w-sm mx-auto">
+            {jobs.length === 0
+              ? "Click below to fetch verified India & Worldwide Remote opportunities from your database."
+              : "Try selecting another filter pill above or switch back to All."}
+          </p>
+          {jobs.length === 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+              {onFetchJobs && (
+                <button
+                  onClick={onFetchJobs}
+                  disabled={isFetching || isScanning}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] text-white font-bold text-xs transition-all cursor-pointer shadow-lg shadow-[#4F46E5]/30 disabled:opacity-50 active:scale-95"
+                >
+                  {isFetching ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
+                  <span>{isFetching ? "Fetching from Backend..." : "Fetch Jobs from Backend"}</span>
+                </button>
+              )}
+              {onScanLive && (
+                <button
+                  onClick={onScanLive}
+                  disabled={isScanning || isFetching}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#F8F8F8] font-bold text-xs transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                >
+                  {isScanning ? <Loader2 size={14} className="animate-spin text-[#6366F1]" /> : <Sparkles size={14} className="text-[#6366F1]" />}
+                  <span>{isScanning ? "Scanning Live ATS..." : "Scan Live ATS Boards"}</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {filteredJobs.map((job) => (
             <JobCard
               key={job.id}
               job={job}
@@ -299,9 +299,9 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
               onSelect={() => onSelectJob(job)}
               onToggleApply={onToggleApply ? () => onToggleApply(job.id, !job.isApplied) : undefined}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

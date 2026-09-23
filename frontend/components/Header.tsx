@@ -13,7 +13,7 @@ export const Header: React.FC<HeaderProps> = ({ isSidebarOpen, onToggleSidebar }
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}
-          className="hidden md:flex p-2 rounded-xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:border-[#4F46E5] transition-all cursor-pointer shadow-xs items-center gap-2"
+          className="flex p-2 rounded-xl bg-[#101828] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] hover:border-[#4F46E5] transition-all cursor-pointer shadow-xs items-center gap-2"
           title={isSidebarOpen ? "Collapse Sidebar" : "Open Sidebar"}
         >
           <PanelLeft size={16} />

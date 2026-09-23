@@ -270,7 +270,9 @@ export default function Home() {
 
   const handleSelectJob = (job: JobPostingItem) => {
     setSelectedJob(job);
-    setIsMobileDetailOpen(true);
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsMobileDetailOpen(true);
+    }
   };
 
   const handleTailorResume = (jobDesc: string) => {
@@ -351,9 +353,14 @@ export default function Home() {
 
               {/* Right Detail Pane: Visible on desktop always (or placeholder), and on mobile when a job is selected */}
               <div
-                className={`flex-1 min-h-0 h-full ${
-                  isMobileDetailOpen ? "flex flex-col w-full" : "hidden md:flex md:w-auto"
-                } overflow-hidden`}
+                className={`
+                  min-h-0 h-full overflow-hidden shrink-0 border-l border-[#1F293D] bg-[#080F18]
+                  ${
+                    isMobileDetailOpen
+                      ? "fixed inset-0 z-40 flex flex-col w-full md:relative md:inset-auto md:z-auto md:flex md:w-[390px] lg:w-[430px] xl:w-[470px]"
+                      : "hidden md:flex md:w-[390px] lg:w-[430px] xl:w-[470px]"
+                  }
+                `}
               >
                 {selectedJob ? (
                   <JobDetailPane
@@ -363,7 +370,7 @@ export default function Home() {
                     onToggleApply={handleToggleApply}
                   />
                 ) : (
-                  <div className="hidden md:flex w-[380px] lg:w-[420px] border-l border-[#232B3B] bg-[#080F18] h-full flex-col items-center justify-center p-8 text-center text-[#AAB4C5] space-y-3 shrink-0">
+                  <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center text-[#AAB4C5] space-y-3 bg-[#080F18]">
                     <div className="w-12 h-12 rounded-2xl bg-[#101828] border border-[#232B3B] flex items-center justify-center text-[#6366F1]">
                       <Sparkles size={20} />
                     </div>
