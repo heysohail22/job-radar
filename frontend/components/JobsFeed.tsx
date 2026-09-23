@@ -34,7 +34,7 @@ interface JobsFeedProps {
   onScanLive?: () => void;
   onOpenFirecrawl?: () => void;
   isScanning?: boolean;
-  onClearLocalJobs?: () => void;
+  onRefreshJobs?: () => void;
   onToggleApply?: (jobId: string, isApplied: boolean) => void;
   activeFeedTab?: "radar" | "applied";
   onFeedTabChange?: (tab: "radar" | "applied") => void;
@@ -65,12 +65,12 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   onScanLive,
   onOpenFirecrawl,
   isScanning = false,
-  onClearLocalJobs,
+  onRefreshJobs,
   onToggleApply,
   activeFeedTab: controlledTab,
   onFeedTabChange,
   onOpenGoogleJobs,
-  backendUrl = "http://localhost:8000",
+  backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000",
   onDeleteJob,
 }) => {
   const [internalTab, setInternalTab] = useState<"radar" | "applied">("radar");
@@ -307,13 +307,14 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
             <span className="font-bold text-[#F8F8F8]">{jobs.length} in radar</span>
           </div>
 
-          {jobs.length > 0 && onClearLocalJobs && (
+          {onRefreshJobs && (
             <button
-              onClick={onClearLocalJobs}
-              className="h-8 w-8 flex items-center justify-center rounded-xl bg-[#101828] hover:bg-rose-500/20 text-[#667085] hover:text-rose-400 border border-[#232B3B] transition-colors cursor-pointer"
-              title="Clear stored jobs cache"
+              onClick={onRefreshJobs}
+              disabled={isFetching}
+              className="h-8 w-8 flex items-center justify-center rounded-xl bg-[#101828] hover:bg-[#182338] text-[#94A3B8] hover:text-white border border-[#232B3B] transition-colors cursor-pointer disabled:opacity-50"
+              title="Refresh jobs from Supabase"
             >
-              <Trash2 size={13} />
+              <RefreshCw size={13} className={isFetching ? "animate-spin text-[#6366F1]" : ""} />
             </button>
           )}
         </div>
@@ -569,17 +570,35 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {filteredJobs.map((job) => (
-            <JobCard
-              key={job.id}
-              job={job}
-              isSelected={job.id === selectedJobId}
-              onSelect={() => onSelectJob(job)}
-              onToggleApply={onToggleApply ? () => onToggleApply(job.id, !job.isApplied) : undefined}
-              onDelete={onDeleteJob ? () => onDeleteJob(job.id) : undefined}
-            />
-          ))}
+        <div className="space-y-2.5">
+          {activeFilter !== "all" && (
+            <div className="flex items-center justify-between text-xs text-[#8E9EB5] px-1 pb-0.5">
+              <span>
+                Showing <strong className="text-[#F8F8F8] font-bold">{filteredJobs.length}</strong> of{" "}
+                <span className="text-[#64748B]">{baseJobs.length}</span> opportunities
+                {currentFacetObj ? ` matching ${currentFacetObj.label}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => onFilterChange("all")}
+                className="text-[11px] text-[#818CF8] hover:text-[#A5B4FC] hover:underline cursor-pointer font-semibold"
+              >
+                Reset to All ({baseJobs.length})
+              </button>
+            </div>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {filteredJobs.map((job) => (
+              <JobCard
+                key={job.id}
+                job={job}
+                isSelected={job.id === selectedJobId}
+                onSelect={() => onSelectJob(job)}
+                onToggleApply={onToggleApply ? () => onToggleApply(job.id, !job.isApplied) : undefined}
+                onDelete={onDeleteJob ? () => onDeleteJob(job.id) : undefined}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

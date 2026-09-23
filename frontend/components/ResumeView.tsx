@@ -22,8 +22,6 @@ interface ResumeViewProps {
   backendUrl: string;
 }
 
-const RESUME_STORAGE_KEY = "jobmatch_custom_resume";
-
 export const ResumeView: React.FC<ResumeViewProps> = ({
   onGoToJobFinder,
   targetJobDescription = "",
@@ -35,43 +33,27 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
   const [showJDMatcher, setShowJDMatcher] = useState<boolean>(true);
   const [saveToast, setSaveToast] = useState<string | null>(null);
 
-  // Sync from localStorage after hydration
+  // Clear any legacy localStorage keys
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(RESUME_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.name && parsed.skills && parsed.projects) {
-            setResume(parsed);
-          }
-        }
+        localStorage.removeItem("jobmatch_custom_resume");
       }
-    } catch (err) {
-      console.error("Failed to load saved resume from localStorage", err);
-    }
+    } catch {}
   }, []);
 
-  // Update resume and persist to localStorage
+  // Update resume in memory
   const handleUpdateResume = (updated: ResumeDataType) => {
     setResume(updated);
-    try {
-      localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify(updated));
-      setSaveToast("Changes saved locally");
-      setTimeout(() => setSaveToast(null), 2500);
-    } catch (err) {
-      console.error("Local storage error:", err);
-    }
+    setSaveToast("Changes applied");
+    setTimeout(() => setSaveToast(null), 2500);
   };
 
   // Reset to original default resume
   const handleResetResume = () => {
     setResume(resumeData);
-    try {
-      localStorage.removeItem(RESUME_STORAGE_KEY);
-      setSaveToast("Reset to default resume");
-      setTimeout(() => setSaveToast(null), 2500);
-    } catch {}
+    setSaveToast("Reset to default resume");
+    setTimeout(() => setSaveToast(null), 2500);
   };
 
   // Handle direct inline click-to-edit blur events

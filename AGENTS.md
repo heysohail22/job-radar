@@ -11,8 +11,8 @@ This file is a living guide for AI coding agents working on this project. Update
 Core capabilities:
 - **Autonomous Job Discovery**: Backend crawls ATS platforms (Greenhouse, Lever, Ashby, Workday) and Firecrawl sources to discover high-match technical/GenAI roles.
 - **ATS Keyword Matching**: Real-time evaluation of candidate resume vs. target job descriptions with keyword alignment metrics.
-- **Interactive Resume Workspace**: Next.js-based live editable resume document and modal editor with localStorage persistence.
-- **AI Tailoring Engine**: Optimizes summary, skills, and project bullet points for ATS match without fabricating experience.
+- **Interactive Resume Workspace**: Next.js-based live editable resume document and modal editor.
+- **Supabase Cloud Persistence**: Supabase is the single source of truth for jobs, applied tracking, and deletions (zero reliance on client-side localStorage).
 
 ---
 

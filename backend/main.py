@@ -14,7 +14,7 @@ app = FastAPI(
     description="LangGraph & LangChain Powered Gen AI Intern Radar and Resume Tailor API"
 )
 
-# Enable CORS for Frontend (Vite localhost:5173 / localhost:3000)
+# Enable CORS for Frontend (Local development & Vercel production)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

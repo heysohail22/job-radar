@@ -10,10 +10,11 @@ import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle, Home as HomeIcon
 import type { JobPostingItem } from "../lib/types";
 import { defaultJobs } from "../lib/defaultJobs";
 
-const STORAGE_KEY = "jobmatch_radar_jobs";
-
-// Dynamically connect to backend via LAN IP (e.g. 192.168.x.x:8000) or localhost
+// Dynamically connect to backend via NEXT_PUBLIC_BACKEND_URL in production, or fallback to LAN IP/localhost
 const getBackendUrl = () => {
+  if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    return process.env.NEXT_PUBLIC_BACKEND_URL.replace(/\/$/, "");
+  }
   if (typeof window !== "undefined" && window.location.hostname) {
     return `http://${window.location.hostname}:8000`;
   }
@@ -26,7 +27,7 @@ export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [activePillFilter, setActivePillFilter] = useState<string>("all");
-  // Start with defaultJobs on both SSR and client to ensure 100% hydration match
+  // Start with defaultJobs on initial render; Supabase live data syncs immediately
   const [jobs, setJobs] = useState<JobPostingItem[]>(defaultJobs);
   const [selectedJob, setSelectedJob] = useState<JobPostingItem | null>(defaultJobs[0] || null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
@@ -42,22 +43,15 @@ export default function Home() {
     return jobs.filter((j) => !!j.isApplied).length;
   }, [jobs]);
 
-  // Sync saved jobs from localStorage after hydration without mismatch
+  // Clean any legacy localStorage keys to ensure Supabase is the single source of truth
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setJobs(parsed);
-            setSelectedJob(parsed[0]);
-          }
-        }
+        localStorage.removeItem("jobmatch_radar_jobs");
+        localStorage.removeItem("jobmatch_resume_v1");
+        localStorage.removeItem("jobmatch_custom_resume");
       }
-    } catch (err) {
-      console.error("Local storage load error:", err);
-    }
+    } catch {}
   }, []);
 
   // Set sidebar open by default only on desktop
@@ -80,7 +74,12 @@ export default function Home() {
   // Helper to merge newly fetched/scraped jobs with existing jobs:
   // 1. Strictly deduplicates by ID, normalized Company+Title, and URL (guarantees zero duplicate cards)
   // 2. Preserves already applied status so applied jobs stay safely in "Applied Jobs" and never reappear in "Active Radar"
-  const mergeJobsPreservingApplied = (incoming: JobPostingItem[], current: JobPostingItem[]): JobPostingItem[] => {
+  // 3. When isFullSync is true (syncing from Supabase), cleans out stale accumulated localStorage items
+  const mergeJobsPreservingApplied = (
+    incoming: JobPostingItem[],
+    current: JobPostingItem[],
+    { isFullSync = false }: { isFullSync?: boolean } = {}
+  ): JobPostingItem[] => {
     const currentAppliedMap = new Map<string, JobPostingItem>();
     const currentAppliedKeys = new Set<string>();
 
@@ -126,8 +125,11 @@ export default function Home() {
       });
     }
 
-    // 2. Keep existing jobs that were not in incoming batch (including all applied jobs)
+    // 2. Keep existing jobs (in full sync from DB, prune stale unapplied items; retain all applied jobs)
     for (const job of current) {
+      if (isFullSync && !job.isApplied) {
+        continue;
+      }
       const { compTitleKey, urlKey } = getKeys(job);
       if (seenKeys.has(job.id) || seenKeys.has(compTitleKey) || (urlKey && seenKeys.has(urlKey))) {
         continue;
@@ -193,18 +195,13 @@ export default function Home() {
     }
   };
 
-  // Helper to update jobs and sync to localStorage
+  // Helper to update jobs in memory (Supabase is single source of truth)
   const updateJobs = (newJobs: JobPostingItem[]) => {
     setJobs(newJobs);
     if (newJobs.length > 0) {
       setSelectedJob((prev) => (prev && newJobs.some((j) => j.id === prev.id) ? prev : newJobs[0]));
     } else {
       setSelectedJob(null);
-    }
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newJobs));
-    } catch (err) {
-      console.error("Local storage write error:", err);
     }
   };
 
@@ -213,7 +210,7 @@ export default function Home() {
     fetchBackendJobs({ silent: true });
   }, []);
 
-  // Fetch jobs from backend (FastAPI /api/jobs) with graceful abort handling
+  // Fetch jobs from backend (FastAPI /api/jobs -> Supabase)
   const fetchBackendJobs = async ({ silent = false }: { silent?: boolean } = {}) => {
     setIsFetchingBackend(true);
     if (!silent) setStatusFeedback(null);
@@ -223,7 +220,7 @@ export default function Home() {
 
     try {
       const baseUrl = getBackendUrl();
-      // Fast fetch from backend database/cache + applied records
+      // Fast fetch directly from Supabase database via backend
       const [res, appliedRes] = await Promise.all([
         fetch(`${baseUrl}/api/jobs`, { signal: controller.signal }),
         fetch(`${baseUrl}/api/jobs/applied`, { signal: controller.signal }).catch(() => null),
@@ -233,7 +230,7 @@ export default function Home() {
         throw new Error(`Backend responded with status ${res.status}`);
       }
 
-      const liveData: JobPostingItem[] = await res.json();
+      const liveData: any[] = await res.json();
       let appliedDbList: any[] = [];
       if (appliedRes && appliedRes.ok) {
         try {
@@ -244,24 +241,37 @@ export default function Home() {
       if (Array.isArray(liveData) && liveData.length > 0) {
         // Overlay any applied jobs stored in Supabase
         const appliedDbIds = new Set(appliedDbList.map((a: any) => a.job_id || a.id));
-        const enrichedLiveData = liveData.map((job) => {
-          if (appliedDbIds.has(job.id)) {
-            const foundApplied = appliedDbList.find((a: any) => (a.job_id || a.id) === job.id);
-            return {
-              ...job,
-              isApplied: true,
-              appliedAt: foundApplied?.applied_at || job.appliedAt || new Date().toISOString(),
-            };
-          }
-          return job;
+        const cleanJobs: JobPostingItem[] = liveData.map((job: any) => {
+          const isApp = appliedDbIds.has(job.id) || Boolean(job.isApplied ?? job.is_applied ?? false);
+          const foundApplied = appliedDbList.find((a: any) => (a.job_id || a.id) === job.id);
+          const appAt = isApp ? (foundApplied?.applied_at || job.appliedAt || job.applied_at || undefined) : undefined;
+
+          return {
+            id: job.id,
+            company: job.company,
+            title: job.title,
+            location: job.location || "Remote",
+            url: job.url || "",
+            description: job.description || "",
+            postedDate: job.postedDate || job.posted_date || "Recently",
+            source: job.source || "Greenhouse",
+            techStack: job.techStack || job.tech_stack || [],
+            matchScore: job.matchScore ?? job.match_score ?? 80,
+            matchReason: job.matchReason || job.match_reason || "Matching role.",
+            isInternship: job.isInternship ?? job.is_internship ?? true,
+            companyStage: job.companyStage || job.company_stage || "Seed / Series A",
+            isIndia: job.isIndia ?? job.is_india ?? false,
+            isFresher: job.isFresher ?? job.is_fresher ?? true,
+            isApplied: isApp,
+            appliedAt: appAt,
+          };
         });
 
-        // Merge with existing jobs while preserving applied status & removing any duplicate repeats
-        const merged = mergeJobsPreservingApplied(enrichedLiveData, jobs);
-        updateJobs(merged);
+        // Supabase is our single source of truth - direct sync into state
+        updateJobs(cleanJobs);
         if (!silent) {
           setStatusFeedback({
-            message: `Synced ${merged.length} opportunities! (Deduplicated, applied preserved)`,
+            message: `Synced ${cleanJobs.length} live opportunities from Supabase!`,
             type: "success",
           });
         }
@@ -367,16 +377,9 @@ export default function Home() {
       }
     };
 
-  // Clear locally stored jobs
-  const handleClearLocalJobs = () => {
-    if (window.confirm("Are you sure you want to clear locally stored jobs?")) {
-      updateJobs([]);
-      setStatusFeedback({
-        message: "Cleared all locally stored jobs.",
-        type: "info",
-      });
-      setTimeout(() => setStatusFeedback(null), 3000);
-    }
+  // Refresh jobs directly from Supabase
+  const handleRefreshFromSupabase = () => {
+    fetchBackendJobs({ silent: false });
   };
 
   // Toggle applied status for a job
@@ -416,7 +419,7 @@ export default function Home() {
         body: JSON.stringify({ isApplied: isApplied, job: targetJob }),
       });
     } catch (err) {
-      console.warn("Backend toggle apply status failed (persisted in localStorage):", err);
+      console.warn("Backend toggle apply status failed:", err);
     }
   };
 
@@ -519,7 +522,7 @@ export default function Home() {
                   onOpenFirecrawl={() => setIsFirecrawlOpen(true)}
                   onOpenGoogleJobs={() => setIsGoogleModalOpen(true)}
                   isScanning={isScanning}
-                  onClearLocalJobs={handleClearLocalJobs}
+                  onRefreshJobs={handleRefreshFromSupabase}
                   onToggleApply={handleToggleApply}
                   activeFeedTab={feedTab}
                   onFeedTabChange={setFeedTab}
