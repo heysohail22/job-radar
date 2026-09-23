@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { Sparkles, Home, FileText, ChevronLeft, X } from "lucide-react";
+import { Sparkles, Home, FileText, ChevronLeft, X, CheckCircle2 } from "lucide-react";
 
-export type NavTab = "jobs" | "resume";
+export type NavTab = "jobs" | "applied" | "resume";
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
+  appliedCount?: number;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -17,10 +18,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onClose,
   activeTab,
   onTabChange,
+  appliedCount = 0,
 }) => {
   const navItems = [
-    { id: "jobs" as NavTab, label: "Jobs Radar", icon: Home },
-    { id: "resume" as NavTab, label: "My Resume", icon: FileText },
+    { id: "jobs" as NavTab, label: "Jobs Radar", icon: Home, count: null },
+    { id: "applied" as NavTab, label: "Applied Jobs", icon: CheckCircle2, count: appliedCount },
+    { id: "resume" as NavTab, label: "My Resume", icon: FileText, count: null },
   ];
 
   const renderContent = (isMobileView: boolean) => (
@@ -73,7 +76,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 `}
               >
                 <Icon size={16} className={isActive ? "text-[#6366F1]" : "text-[#667085]"} />
-                <span>{item.label}</span>
+                <span className="flex-1 text-left">{item.label}</span>
+                {item.count !== null && item.count > 0 && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#1E293B] text-[#818CF8] border border-[#6366F1]/30">
+                    {item.count}
+                  </span>
+                )}
               </button>
             );
           })}

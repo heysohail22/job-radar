@@ -22,6 +22,7 @@ const getBackendUrl = () => {
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<NavTab>("jobs");
+  const [feedTab, setFeedTab] = useState<"radar" | "applied">("radar");
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [activePillFilter, setActivePillFilter] = useState<string>("all");
@@ -35,6 +36,11 @@ export default function Home() {
     type: "success" | "error" | "info";
   } | null>(null);
   const [targetTailorJD, setTargetTailorJD] = useState<string>("");
+
+  // Total applied count for badge
+  const appliedCount = useMemo(() => {
+    return jobs.filter((j) => !!j.isApplied).length;
+  }, [jobs]);
 
   // Sync saved jobs from localStorage after hydration without mismatch
   useEffect(() => {
@@ -222,59 +228,45 @@ export default function Home() {
     }
   };
 
-  // Filter Jobs based on actual ATS fields (title, location, techStack)
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      if (
-        activePillFilter === "startups" &&
-        !(
-          (job.companyStage &&
-            (job.companyStage.toLowerCase().includes("seed") ||
-              job.companyStage.toLowerCase().includes("series a") ||
-              job.companyStage.toLowerCase().includes("early") ||
-              job.companyStage.toLowerCase().includes("yc"))) ||
-          job.source.toLowerCase() === "ashby" ||
-          job.source.toLowerCase() === "y combinator" ||
-          job.source.toLowerCase() === "firecrawl"
-        )
-      ) {
-        return false;
+  // Toggle applied status for a job
+  const handleToggleApply = async (jobId: string, isApplied: boolean) => {
+    const updatedJobs = jobs.map((j) => {
+      if (j.id === jobId) {
+        return {
+          ...j,
+          isApplied,
+          appliedAt: isApplied ? new Date().toISOString() : undefined,
+        };
       }
-      if (activePillFilter === "internship") {
-        const isInternOrFresher =
-          job.isInternship ||
-          job.isFresher ||
-          /intern|fresher|graduate|trainee|junior|student|co-op|apprentice/i.test(
-            job.title + " " + job.description
-          );
-        if (!isInternOrFresher) return false;
-      }
-      if (activePillFilter === "agents") {
-        const matchesAgents =
-          /agent|langgraph|langchain|tool|workflow/i.test(job.title + " " + job.description) ||
-          job.techStack.some((t) => /agent|langgraph|langchain|tool/i.test(t));
-        if (!matchesAgents) return false;
-      }
-      if (activePillFilter === "rag") {
-        const matchesRag =
-          /rag|vector|supabase|pgvector|crag|retrieval/i.test(job.title + " " + job.description) ||
-          job.techStack.some((t) => /rag|vector|supabase|pgvector|crag/i.test(t));
-        if (!matchesRag) return false;
-      }
-      if (activePillFilter === "remote" && !job.location.toLowerCase().includes("remote")) {
-        return false;
-      }
-      if (activePillFilter === "india") {
-        const isIndiaRole =
-          job.isIndia ||
-          /india|bengaluru|bangalore|hyderabad|pune|gurgaon|gurugram|delhi|ncr|mumbai|noida|chennai|kochi/i.test(
-            job.location + " " + job.title + " " + job.description
-          );
-        if (!isIndiaRole) return false;
-      }
-      return true;
+      return j;
     });
-  }, [jobs, activePillFilter]);
+    updateJobs(updatedJobs);
+
+    if (selectedJob?.id === jobId) {
+      setSelectedJob({
+        ...selectedJob,
+        isApplied,
+        appliedAt: isApplied ? new Date().toISOString() : undefined,
+      });
+    }
+
+    setStatusFeedback({
+      message: isApplied ? "Moved to Applied Jobs ✓" : "Restored to Active Radar",
+      type: "success",
+    });
+    setTimeout(() => setStatusFeedback(null), 3000);
+
+    try {
+      const baseUrl = getBackendUrl();
+      await fetch(`${baseUrl}/api/jobs/${jobId}/apply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_applied: isApplied }),
+      });
+    } catch (err) {
+      console.warn("Backend toggle apply status failed (persisted in localStorage):", err);
+    }
+  };
 
   const handleSelectJob = (job: JobPostingItem) => {
     setSelectedJob(job);
@@ -293,9 +285,18 @@ export default function Home() {
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        activeTab={activeTab}
+        activeTab={activeTab === "resume" ? "resume" : feedTab === "applied" ? "applied" : "jobs"}
+        appliedCount={appliedCount}
         onTabChange={(tab) => {
-          setActiveTab(tab);
+          if (tab === "applied") {
+            setActiveTab("jobs");
+            setFeedTab("applied");
+          } else if (tab === "jobs") {
+            setActiveTab("jobs");
+            setFeedTab("radar");
+          } else if (tab === "resume") {
+            setActiveTab("resume");
+          }
           setIsMobileDetailOpen(false);
         }}
       />
@@ -331,7 +332,7 @@ export default function Home() {
                 }`}
               >
                 <JobsFeed
-                  jobs={filteredJobs}
+                  jobs={jobs}
                   selectedJobId={selectedJob?.id || ""}
                   onSelectJob={handleSelectJob}
                   activeFilter={activePillFilter}
@@ -342,6 +343,9 @@ export default function Home() {
                   onOpenFirecrawl={() => setIsFirecrawlOpen(true)}
                   isScanning={isScanning}
                   onClearLocalJobs={handleClearLocalJobs}
+                  onToggleApply={handleToggleApply}
+                  activeFeedTab={feedTab}
+                  onFeedTabChange={setFeedTab}
                 />
               </div>
 
@@ -356,6 +360,7 @@ export default function Home() {
                     job={selectedJob}
                     onTailorResume={handleTailorResume}
                     onBack={() => setIsMobileDetailOpen(false)}
+                    onToggleApply={handleToggleApply}
                   />
                 ) : (
                   <div className="hidden md:flex w-[380px] lg:w-[420px] border-l border-[#232B3B] bg-[#080F18] h-full flex-col items-center justify-center p-8 text-center text-[#AAB4C5] space-y-3 shrink-0">

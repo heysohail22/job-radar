@@ -55,8 +55,27 @@ def save_jobs_to_db(jobs: List[JobPosting]):
     except Exception as e:
         print(f"Error upserting jobs to Supabase: {e}")
 
-def fetch_jobs_from_db(search: Optional[str] = None, min_score: int = 0) -> List[JobPosting]:
-    """Fetch jobs from Supabase with search query and minimum score filters."""
+def toggle_job_applied_in_db(job_id: str, is_applied: bool) -> bool:
+    """Updates the applied status of a job in Supabase."""
+    client = get_supabase_client()
+    from datetime import datetime, timezone
+    now_str = datetime.now(timezone.utc).isoformat() if is_applied else None
+    try:
+        client.table("jobs").update({
+            "is_applied": is_applied,
+            "applied_at": now_str
+        }).eq("id", job_id).execute()
+        return True
+    except Exception as e:
+        print(f"Note: Supabase applied status update: {e}")
+        return False
+
+def fetch_jobs_from_db(
+    search: Optional[str] = None, 
+    min_score: int = 0,
+    applied: Optional[bool] = None
+) -> List[JobPosting]:
+    """Fetch jobs from Supabase with search query, minimum score, and applied status filters."""
     client = get_supabase_client()
     query = client.table("jobs").select("*").gte("match_score", min_score)
     
@@ -64,14 +83,37 @@ def fetch_jobs_from_db(search: Optional[str] = None, min_score: int = 0) -> List
         q = search.strip()
         query = query.or_(f"title.ilike.%{q}%,company.ilike.%{q}%,description.ilike.%{q}%")
         
+    if applied is True:
+        try:
+            query = query.eq("is_applied", True)
+        except Exception:
+            pass
+    elif applied is False:
+        try:
+            query = query.or_("is_applied.eq.false,is_applied.is.null")
+        except Exception:
+            pass
+            
     query = query.order("match_score", desc=True).order("created_at", desc=True)
     
     try:
         response = query.execute()
         rows = response.data or []
     except Exception as e:
-        print(f"Error fetching jobs from Supabase: {e}")
-        return []
+        # Fallback if is_applied column is not yet migrated in Supabase
+        if "is_applied" in str(e):
+            try:
+                fallback_query = client.table("jobs").select("*").gte("match_score", min_score)
+                if search and search.strip():
+                    fallback_query = fallback_query.or_(f"title.ilike.%{search.strip()}%,company.ilike.%{search.strip()}%,description.ilike.%{search.strip()}%")
+                fallback_query = fallback_query.order("match_score", desc=True).order("created_at", desc=True)
+                rows = fallback_query.execute().data or []
+            except Exception as inner_err:
+                print(f"Error fetching jobs from Supabase: {inner_err}")
+                return []
+        else:
+            print(f"Error fetching jobs from Supabase: {e}")
+            return []
     
     jobs = []
     for r in rows:
@@ -82,6 +124,15 @@ def fetch_jobs_from_db(search: Optional[str] = None, min_score: int = 0) -> List
             except Exception:
                 tech_list = [tech_list]
                 
+        is_app = bool(r.get("is_applied", False)) if "is_applied" in r else False
+        app_at = r.get("applied_at") if "applied_at" in r else None
+        
+        # In-memory filter fallback if DB column didn't exist
+        if applied is True and not is_app:
+            continue
+        if applied is False and is_app:
+            continue
+            
         jobs.append(JobPosting(
             id=r["id"],
             company=r["company"],
@@ -97,8 +148,11 @@ def fetch_jobs_from_db(search: Optional[str] = None, min_score: int = 0) -> List
             is_internship=bool(r.get("is_internship", True)),
             company_stage=r.get("company_stage") or "Seed / Series A",
             is_india=bool(r.get("is_india", False)),
-            is_fresher=bool(r.get("is_fresher", True))
+            is_fresher=bool(r.get("is_fresher", True)),
+            is_applied=is_app,
+            applied_at=app_at
         ))
         
     return jobs
+
 

@@ -14,4 +14,6 @@ export interface JobPostingItem {
   companyStage?: string;
   isIndia?: boolean;
   isFresher?: boolean;
+  isApplied?: boolean;
+  appliedAt?: string;
 }

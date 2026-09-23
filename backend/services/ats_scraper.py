@@ -129,6 +129,61 @@ def is_india_location(location: str, title: str = "", text: str = "") -> bool:
     combined = f"{location} {title} {text}".lower()
     return bool(re.search(r"\b(india|bengaluru|bangalore|hyderabad|pune|gurgaon|gurugram|delhi|ncr|mumbai|noida|chennai|kochi|ind\b|remote\s*-\s*india|india\s*remote)\b", combined))
 
+def is_eligible_candidate_location(location: str, title: str = "", text: str = "") -> bool:
+    """
+    Keep ONLY jobs that:
+    1. Hire from India (located in India / India Remote), OR
+    2. Are Foreign/Global companies that allow Worldwide / Work-from-Anywhere Remote (eligible for Indian candidates).
+    
+    Reject any job that is on-site abroad (US, UK, Europe, etc.) or restricted to specific foreign countries 
+    (e.g., US Only, North America Only, EU Only, requires US work authorization).
+    """
+    comb = f"{location} {title} {text}".lower()
+    
+    # 1. India check (Direct match)
+    if is_india_location(location, title, text):
+        return True
+        
+    # 2. Strict Foreign Geo-Restrictions (Reject)
+    restricted_patterns = [
+        r"\b(us\s*only|usa\s*only|united\s*states\s*only|u\.s\.\s*only)\b",
+        r"\b(north\s*america\s*only|na\s*only)\b",
+        r"\b(canada\s*only)\b",
+        r"\b(eu\s*only|europe\s*only|uk\s*only|united\s*kingdom\s*only)\b",
+        r"\b(latin\s*america\s*only|latam\s*only)\b",
+        r"\b(must\s*(be|reside|live)\s*in\s*(the\s*)?(us|usa|united states|uk|europe|canada))\b",
+        r"\b(us\s*citizen|us\s*work\s*authorization|authorized\s*to\s*work\s*in\s*(the\s*)?us)\b",
+        r"\b(security\s*clearance|ts/sci|polygraph)\b"
+    ]
+    for pat in restricted_patterns:
+        if re.search(pat, comb):
+            return False
+            
+    # 3. Check for explicitly allowed worldwide/anywhere remote
+    loc_lower = location.lower()
+    is_explicit_worldwide = bool(re.search(r"\b(worldwide|anywhere|global|all\s*locations?|remote\s*-\s*anywhere|anywhere\s*in\s*the\s*world|apac)\b", loc_lower))
+    if is_explicit_worldwide:
+        return True
+        
+    if "remote" in loc_lower:
+        # Check if location specifies a foreign country/city
+        foreign_geos = r"\b(united\s*states|usa?\b|u\.s\.?|san\s*francisco|new\s*york|seattle|austin|chicago|los\s*angeles|california|london|berlin|paris|toronto|canada|germany|france|netherlands|amsterdam|uk\b|ireland|dublin|singapore|australia|sydney)\b"
+        if re.search(foreign_geos, loc_lower):
+            return False
+        # Generic remote without negative restriction -> allowed
+        return True
+        
+    # On-site abroad -> Reject
+    return False
+
+def is_candidate_skills_match(title: str, desc: str = "", tech_stack: List[str] = None) -> bool:
+    """Ensure the job has meaningful alignment with candidate's actual technical capabilities."""
+    stack_str = " ".join(tech_stack) if tech_stack else ""
+    comb = f"{title} {desc} {stack_str}".lower()
+    core_skills_pattern = r"\b(python|langchain|langgraph|multi-?agent|agentic|agents?|tool\s*calling|rag\b|retrieval|vector|pgvector|supabase|fastapi|next\.?js|react|typescript|pytorch|hugging\s*face|llms?|generative\s*ai|gen\s*ai|ai\s*engineer|machine\s*learning|prompt\s*engineering)\b"
+    matches = re.findall(core_skills_pattern, comb)
+    return len(matches) >= 1
+
 def is_fresher_job(title: str, desc: str = "", emp_type: str = "") -> bool:
     t = title.lower()
     combined = f"{t} {emp_type}".lower()
@@ -202,7 +257,7 @@ CURATED_JOBS: List[JobPosting] = [
         id="curated-langchain-intern",
         company="LangChain",
         title="Generative AI & LLM Systems Engineering Intern",
-        location="Remote (Global)",
+        location="Remote (Worldwide)",
         url="https://boards.greenhouse.io/langchain/jobs/4320145007",
         description="Build state-of-the-art agentic workflows, LangGraph multi-agent execution engines, and evaluations for production LLM applications. Working directly with LangChain and LangGraph core engineers.",
         posted_date="Recently",
@@ -220,7 +275,7 @@ CURATED_JOBS: List[JobPosting] = [
         company="Composio",
         title="Member Technical Staff - Applied AI Engineer",
         location="Bangalore, India",
-        url="https://jobs.ashbyhq.com/composio",
+        url="https://jobs.ashbyhq.com/composio/a2fd44d1-1457-4248-8d9c-905953016398",
         description="Build autonomous tool-calling integrations, multi-agent execution pipelines, and agent reliability guardrails for 200+ developer tools. Working with LangChain, LangGraph, and Python.",
         posted_date="Recently",
         source="Ashby",
@@ -237,7 +292,7 @@ CURATED_JOBS: List[JobPosting] = [
         company="Sarvam AI",
         title="Agent Engineer (Early Career / Intern)",
         location="Bengaluru, India",
-        url="https://jobs.ashbyhq.com/sarvam",
+        url="https://jobs.ashbyhq.com/sarvam/f3376204-1c2d-42a8-bf4a-1a0eec2fbc3c",
         description="Design and deploy frontier GenAI agents, contextual retrieval systems (RAG), and evaluation pipelines using Python, FastAPI, and PyTorch for India's premier sovereign AI lab.",
         posted_date="Recently",
         source="Ashby",
@@ -254,7 +309,7 @@ CURATED_JOBS: List[JobPosting] = [
         company="Scale AI",
         title="Forward Deployed Engineer, Gen AI",
         location="Bengaluru, India",
-        url="https://boards.greenhouse.io/scaleai",
+        url="https://boards.greenhouse.io/scaleai/jobs/4523992005",
         description="Deploy enterprise generative AI solutions, RAG pipelines, and model evaluation guardrails for mission-critical client applications. Working with Python, FastAPI, and LangChain.",
         posted_date="Recently",
         source="Greenhouse",
@@ -270,8 +325,8 @@ CURATED_JOBS: List[JobPosting] = [
         id="curated-mem0-ai-eng",
         company="Mem0",
         title="Full Stack AI Engineer (Agent Memory & Vector Search)",
-        location="Remote / San Francisco",
-        url="https://jobs.ashbyhq.com/mem0",
+        location="Remote (Worldwide)",
+        url="https://jobs.ashbyhq.com/mem0/642f00ec-c220-48a5-9a4d-4af67875032c",
         description="Develop long-term memory for AI agents, multi-agent context engineering, and pgvector/Supabase retrieval systems. Working with Python, Next.js, and FastAPI.",
         posted_date="Recently",
         source="Ashby",
@@ -283,6 +338,7 @@ CURATED_JOBS: List[JobPosting] = [
         is_india=False,
         is_fresher=True
     ),
+
     JobPosting(
         id="curated-llamaindex-rag-eng",
         company="LlamaIndex",
@@ -326,9 +382,21 @@ async def fetch_ashby_jobs(company: str, stage: str = "Seed / Series A") -> List
                     
                 if is_intern_or_early_role(title, emp_type, len(job_list)):
                     clean_desc = desc[:1000]
-                    location = j.get("location") or ("Remote" if j.get("isRemote") else "San Francisco, CA")
-                    job_url = j.get("jobUrl") or f"https://jobs.ashbyhq.com/{company}"
+                    location = j.get("location") or ("Remote (Worldwide)" if j.get("isRemote") else "Remote")
+                    
+                    # 1. Location filter (India or Worldwide Remote only)
+                    if not is_eligible_candidate_location(location, title, clean_desc):
+                        continue
+                        
                     tech_stack = extract_tech_stack(title + " " + clean_desc)
+                    
+                    # 2. Skill match filter
+                    if not is_candidate_skills_match(title, clean_desc, tech_stack):
+                        continue
+                        
+                    # 3. Direct URL guaranteed
+                    job_url = j.get("jobUrl") or j.get("applyUrl") or f"https://jobs.ashbyhq.com/{company}/{j.get('id')}"
+                    
                     is_intern = is_intern_role_simple(title, emp_type)
                     is_india = is_india_location(location, title, clean_desc)
                     is_fresher = is_fresher_job(title, clean_desc, emp_type)
@@ -377,8 +445,18 @@ async def fetch_greenhouse_jobs(company: str, stage: str = "Early Stage") -> Lis
                     continue
                     
                 if is_intern_or_early_role(title, "", len(job_list)):
-                    tech_stack = extract_tech_stack(title + " " + clean_desc)
                     location = j.get("location", {}).get("name") or "Remote"
+                    
+                    # 1. Location filter (India or Worldwide Remote only)
+                    if not is_eligible_candidate_location(location, title, clean_desc):
+                        continue
+                        
+                    tech_stack = extract_tech_stack(title + " " + clean_desc)
+                    
+                    # 2. Skill match filter
+                    if not is_candidate_skills_match(title, clean_desc, tech_stack):
+                        continue
+                        
                     is_intern = is_intern_role_simple(title)
                     is_india = is_india_location(location, title, clean_desc)
                     is_fresher = is_fresher_job(title, clean_desc, "")
@@ -428,7 +506,17 @@ async def fetch_lever_jobs(company: str, stage: str = "Seed / Series A") -> List
                 if is_intern_or_early_role(title, commitment, len(data)):
                     clean_desc = desc[:1000]
                     location = j.get("categories", {}).get("location") or "Remote"
+                    
+                    # 1. Location filter (India or Worldwide Remote only)
+                    if not is_eligible_candidate_location(location, title, clean_desc):
+                        continue
+                        
                     tech_stack = extract_tech_stack(title + " " + clean_desc)
+                    
+                    # 2. Skill match filter
+                    if not is_candidate_skills_match(title, clean_desc, tech_stack):
+                        continue
+                        
                     is_intern = is_intern_role_simple(title, commitment)
                     is_india = is_india_location(location, title, clean_desc)
                     is_fresher = is_fresher_job(title, clean_desc, commitment)
@@ -439,7 +527,7 @@ async def fetch_lever_jobs(company: str, stage: str = "Seed / Series A") -> List
                         company=company.title().replace("-", " "),
                         title=title,
                         location=location,
-                        url=j.get("hostedUrl") or j.get("applyUrl") or f"https://jobs.lever.co/{company}",
+                        url=j.get("hostedUrl") or j.get("applyUrl") or f"https://jobs.lever.co/{company}/{j.get('id')}",
                         description=clean_desc,
                         posted_date="Recently",
                         source="Lever",
@@ -503,16 +591,26 @@ async def fetch_yc_startup_jobs() -> List[JobPosting]:
                         continue
                         
                     is_india = is_india_location("", title, story_text)
-                    is_intern = is_intern_role_simple(title)
-                    is_fresher = is_fresher_job(title, story_text, "")
-                    
                     if is_india:
                         loc_match = re.search(r"(bengaluru|bangalore|chennai|delhi|gurgaon|gurugram|pune|mumbai|hyderabad|noida)", f"{title} {story_text}".lower())
                         location = f"{loc_match.group(1).title() if loc_match else 'Bengaluru'}, India"
+                    elif re.search(r"\b(remote|anywhere|worldwide)\b", f"{title} {story_text}".lower()):
+                        location = "Remote (Worldwide)"
                     else:
-                        location = "Remote / San Francisco"
+                        continue
+                        
+                    # Location check
+                    if not is_eligible_candidate_location(location, title, story_text):
+                        continue
                         
                     tech_stack = extract_tech_stack(title + " " + story_text)
+                    
+                    # Skill match check
+                    if not is_candidate_skills_match(title, story_text, tech_stack):
+                        continue
+                        
+                    is_intern = is_intern_role_simple(title)
+                    is_fresher = is_fresher_job(title, story_text, "")
                     match_score, match_reason = compute_candidate_match(title, story_text, "Seed / YC Startup", tech_stack, is_india, is_fresher)
                     
                     clean_desc = f"{title}\n\nOfficial Y Combinator batch startup opportunity. Direct founder/CTO hiring with high response rate."
@@ -532,10 +630,10 @@ async def fetch_yc_startup_jobs() -> List[JobPosting]:
                         is_internship=is_intern,
                         company_stage="Seed / YC Startup",
                         is_india=is_india,
-                        is_fresher=is_fresher
                     ))
             except Exception:
                 continue
+
                 
         return jobs
 

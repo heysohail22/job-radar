@@ -1,5 +1,4 @@
-import React from "react";
-import { MapPin, Clock, ChevronRight, Globe2 } from "lucide-react";
+import { MapPin, Clock, ChevronRight, Globe2, CheckCircle2 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos";
 import type { JobPostingItem } from "../lib/types";
 
@@ -7,12 +6,14 @@ interface JobCardProps {
   job: JobPostingItem;
   isSelected: boolean;
   onSelect: () => void;
+  onToggleApply?: (e: React.MouseEvent) => void;
 }
 
 export const JobCard: React.FC<JobCardProps> = ({
   job,
   isSelected,
   onSelect,
+  onToggleApply,
 }) => {
   return (
     <button
@@ -96,11 +97,35 @@ export const JobCard: React.FC<JobCardProps> = ({
           </span>
         </div>
 
-        {/* Authentic Source Badge */}
-        <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#181F30] border border-[#232B3B] text-[10px] text-[#AAB4C5]">
-          <Globe2 size={10} className="text-[#6366F1]" />
-          <span>{job.source}</span>
-        </span>
+        <div className="flex items-center gap-2">
+          {/* Authentic Source Badge */}
+          <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#181F30] border border-[#232B3B] text-[10px] text-[#AAB4C5]">
+            <Globe2 size={10} className="text-[#6366F1]" />
+            <span>{job.source}</span>
+          </span>
+
+          {/* Mark as Applied Action */}
+          {onToggleApply && (
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleApply(e);
+              }}
+              title={job.isApplied ? "Marked as Applied (Click to move back to Radar)" : "Mark as Applied (moves to Applied Jobs)"}
+              className={`
+                flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold cursor-pointer transition-all
+                ${
+                  job.isApplied
+                    ? "bg-[#10B981]/20 text-[#34D399] border border-[#10B981]/40 hover:bg-[#EF4444]/15 hover:text-[#F87171] hover:border-[#EF4444]/40"
+                    : "bg-[#181F30] text-[#AAB4C5] border border-[#232B3B] hover:text-[#34D399] hover:border-[#10B981]/50 hover:bg-[#10B981]/10"
+                }
+              `}
+            >
+              <CheckCircle2 size={11} className={job.isApplied ? "text-[#34D399]" : "text-[#667085]"} />
+              <span>{job.isApplied ? "Applied ✓" : "Mark Applied"}</span>
+            </span>
+          )}
+        </div>
       </div>
     </button>
   );

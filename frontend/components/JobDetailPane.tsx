@@ -15,12 +15,14 @@ interface JobDetailPaneProps {
   job: JobPostingItem;
   onTailorResume: (jobDescription: string) => void;
   onBack?: () => void;
+  onToggleApply?: (jobId: string, isApplied: boolean) => void;
 }
 
 export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
   job,
   onTailorResume,
   onBack,
+  onToggleApply,
 }) => {
   // Circular stroke calculation for Donut Chart
   const radius = 38;
@@ -98,16 +100,38 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
           <span>Tailor My Resume for this Role</span>
         </button>
 
-        {/* Official Posting External Link */}
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noreferrer"
-          className="w-full py-2.5 px-4 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#AAB4C5] hover:text-[#F8F8F8] font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-        >
-          <span>Open on {job.source}</span>
-          <ExternalLink size={13} />
-        </a>
+        {/* Action Buttons Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Official Direct Posting External Link */}
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noreferrer"
+            className="py-2.5 px-3 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-[#F8F8F8] font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <span>Open & Apply</span>
+            <ExternalLink size={13} />
+          </a>
+
+          {/* Mark as Applied Toggle Button */}
+          {onToggleApply && (
+            <button
+              type="button"
+              onClick={() => onToggleApply(job.id, !job.isApplied)}
+              className={`
+                py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer border
+                ${
+                  job.isApplied
+                    ? "bg-[#10B981]/20 text-[#34D399] border-[#10B981]/50 hover:bg-[#EF4444]/20 hover:text-[#F87171] hover:border-[#EF4444]/50"
+                    : "bg-[#101828] text-[#F8F8F8] border-[#232B3B] hover:border-[#10B981]/50 hover:text-[#34D399] hover:bg-[#10B981]/10"
+                }
+              `}
+            >
+              <CheckCircle2 size={14} className={job.isApplied ? "text-[#34D399]" : "text-[#667085]"} />
+              <span>{job.isApplied ? "Applied ✓" : "Mark as Applied"}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Real AI Match Analysis Card */}

@@ -17,9 +17,14 @@ class JobPosting(BaseModel):
     company_stage: Optional[str] = Field(alias="companyStage", default="Seed / Series A")
     is_india: bool = Field(alias="isIndia", default=False)
     is_fresher: bool = Field(alias="isFresher", default=True)
+    is_applied: bool = Field(alias="isApplied", default=False)
+    applied_at: Optional[str] = Field(alias="appliedAt", default=None)
 
     class Config:
         populate_by_name = True
+
+class ApplyRequest(BaseModel):
+    is_applied: bool = Field(alias="isApplied", default=True)
 
 class ScrapeRequest(BaseModel):
     search_query: Optional[str] = "Gen AI Intern"
