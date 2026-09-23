@@ -51,17 +51,26 @@ CANDIDATE BASE RESUME DATA:
     if "gemini" in model_id.lower():
         if not gemini_key:
             raise ValueError("Gemini API Key missing.")
+        # Default to settings.GEMINI_MODEL for Gemini requests
+        gem_model = settings.GEMINI_MODEL if model_id in ["gemini", "gemini-2.5-flash", "gemini-3.8-flash"] else model_id
         llm = ChatGoogleGenerativeAI(
-            model=model_id,
+            model=gem_model,
             google_api_key=gemini_key,
-            temperature=0.2,
-            response_mime_type="application/json"
+            temperature=0.2
         )
-        res = await llm.ainvoke([
+        messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": prompt_content}
-        ])
-        parsed = json.loads(res.content)
+        ]
+        res = await asyncio.to_thread(llm.invoke, messages)
+        raw_text = res.content if isinstance(res.content, str) else str(res.content)
+        import re, ast
+        json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        content_to_parse = json_match.group(0) if json_match else raw_text
+        try:
+            parsed = json.loads(content_to_parse)
+        except Exception:
+            parsed = ast.literal_eval(content_to_parse)
     else:
         if not groq_key:
             raise ValueError("Groq API Key missing.")

@@ -15,5 +15,6 @@ dependencies = [
     "langgraph>=1.2.12",
     "pydantic>=2.13.5",
     "python-dotenv>=1.2.3",
+    "supabase>=2.31.0",
     "uvicorn>=0.53.0",
 ]

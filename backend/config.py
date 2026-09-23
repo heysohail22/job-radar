@@ -16,8 +16,12 @@ class Settings:
     GEMINI_API_KEY: str = os.getenv("VITE_GEMINI_API_KEY") or os.getenv("GEMINI_API_KEY") or ""
     FIRECRAWL_API_KEY: str = os.getenv("VITE_FIRECRAWL_API_KEY") or os.getenv("FIRECRAWL_API_KEY") or ""
     
-    # Database (always points to backend/jobs_radar.db)
-    DATABASE_PATH: str = os.getenv("DATABASE_PATH", os.path.join(BASE_DIR, "jobs_radar.db"))
+    # Database & Supabase
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL") or ""
+    SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or ""
+    
+    # Gemini Model
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
 
 settings = Settings()
 

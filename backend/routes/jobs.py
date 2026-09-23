@@ -21,7 +21,7 @@ async def get_jobs(
         graph_input = {
             "firecrawl_key": settings.FIRECRAWL_API_KEY,
             "search_query": search or "",
-            "force_live": force_live,
+            "force_live": True,
             "jobs": []
         }
         graph_output = await job_radar_graph.ainvoke(graph_input)

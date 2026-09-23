@@ -45,14 +45,21 @@ Return ONLY JSON:
             )
         else:
             llm = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
+                model=settings.GEMINI_MODEL,
                 google_api_key=api_key,
-                temperature=0.2,
-                response_mime_type="application/json"
+                temperature=0.2
             )
             
-        res = await llm.ainvoke(prompt)
-        parsed = json.loads(res.content)
+        import asyncio
+        res = await asyncio.to_thread(llm.invoke, prompt)
+        raw_text = res.content if isinstance(res.content, str) else str(res.content)
+        import re, ast
+        json_match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        content_to_parse = json_match.group(0) if json_match else raw_text
+        try:
+            parsed = json.loads(content_to_parse)
+        except Exception:
+            parsed = ast.literal_eval(content_to_parse)
         
         return EvaluateResponse(
             matchScore=min(max(int(parsed.get("matchScore", 85)), 50), 99),

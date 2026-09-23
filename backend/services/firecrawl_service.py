@@ -14,23 +14,21 @@ def fetch_firecrawl_yc_jobs(api_key: str, query: str = "Gen AI Intern") -> List[
         # Scrape with extract schema
         scrape_result = app.scrape_url(
             target_url,
-            params={
-                'formats': ['extract'],
-                'extract': {
-                    'schema': {
-                        'type': 'object',
-                        'properties': {
-                            'jobs': {
-                                'type': 'array',
-                                'items': {
-                                    'type': 'object',
-                                    'properties': {
-                                        'company': {'type': 'string'},
-                                        'title': {'type': 'string'},
-                                        'location': {'type': 'string'},
-                                        'url': {'type': 'string'},
-                                        'description': {'type': 'string'},
-                                    }
+            formats=['extract'],
+            extract={
+                'schema': {
+                    'type': 'object',
+                    'properties': {
+                        'jobs': {
+                            'type': 'array',
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    'company': {'type': 'string'},
+                                    'title': {'type': 'string'},
+                                    'location': {'type': 'string'},
+                                    'url': {'type': 'string'},
+                                    'description': {'type': 'string'},
                                 }
                             }
                         }
