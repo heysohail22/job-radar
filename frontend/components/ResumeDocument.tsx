@@ -6,6 +6,9 @@ export interface SpacingConfig {
   lineHeight: number;
   sectionGap: number;
   projectGap: number;
+  summarySkillsGap?: number;
+  skillsProjectsGap?: number;
+  bulletGap?: number;
   paddingX: number;
   paddingY: number;
 }
@@ -25,6 +28,9 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
     lineHeight: 1.45,
     sectionGap: 8,
     projectGap: 6,
+    summarySkillsGap: 8,
+    skillsProjectsGap: 8,
+    bulletGap: 2,
     paddingX: 36,
     paddingY: 28,
   },
@@ -32,7 +38,17 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
   resumeRef,
   isEditable = true,
 }) => {
-  const { fontSize, lineHeight, sectionGap, projectGap, paddingX, paddingY } = spacing;
+  const {
+    fontSize,
+    lineHeight,
+    sectionGap,
+    projectGap,
+    summarySkillsGap = sectionGap,
+    skillsProjectsGap = sectionGap,
+    bulletGap = 2,
+    paddingX,
+    paddingY,
+  } = spacing;
 
   const editableClass = isEditable
     ? "focus:outline-hidden focus:ring-1 focus:ring-indigo-400 focus:bg-indigo-50/40 rounded px-0.5 transition-colors cursor-text"
@@ -168,7 +184,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
       <div className="h-px bg-slate-300 my-2 print:my-1.5" />
 
       {/* Professional Summary Section */}
-      <section style={{ marginBottom: `${sectionGap}px` }} className="break-inside-avoid">
+      <section style={{ marginBottom: `${summarySkillsGap}px` }} className="break-inside-avoid">
         <h2 className="text-[1.05em] font-bold tracking-[0.1em] uppercase text-slate-900 border-b-2 border-slate-900 pb-0.5 mb-1 inline-block">
           Professional Summary
         </h2>
@@ -185,7 +201,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
       </section>
 
       {/* Technical Skills Section */}
-      <section style={{ marginBottom: `${sectionGap}px` }} className="break-inside-avoid">
+      <section style={{ marginBottom: `${skillsProjectsGap}px` }} className="break-inside-avoid">
         <h2 className="text-[1.05em] font-bold tracking-[0.1em] uppercase text-slate-900 border-b-2 border-slate-900 pb-0.5 mb-1 inline-block">
           Technical Skills
         </h2>
@@ -271,7 +287,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                   );
                 })()}
               </div>
-              <ul className="flex flex-col gap-0.5 list-none ml-0.5">
+              <ul className="flex flex-col list-none ml-0.5" style={{ gap: `${bulletGap}px` }}>
                 {project.bullets.map((bullet, bIdx) => (
                   <li key={bIdx} className="flex items-start gap-2 text-[1em] text-slate-700">
                     <span className="text-slate-600 font-bold select-none text-[11px] mt-[1px]">•</span>

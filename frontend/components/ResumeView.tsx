@@ -8,9 +8,11 @@ import {
   ChevronDown,
   ChevronUp,
   FileCheck,
+  Sliders,
+  Maximize2,
 } from "lucide-react";
 import { resumeData, type ResumeDataType } from "../lib/resumeData";
-import { ResumeDocument } from "./ResumeDocument";
+import { ResumeDocument, type SpacingConfig } from "./ResumeDocument";
 import { JDKeywordMatcher } from "./JDKeywordMatcher";
 import { ResumeEditorModal } from "./ResumeEditorModal";
 import type { JobPostingItem } from "../lib/types";
@@ -31,7 +33,66 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
   const [resume, setResume] = useState<ResumeDataType>(resumeData);
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
   const [showJDMatcher, setShowJDMatcher] = useState<boolean>(true);
+  const [showSpacingControls, setShowSpacingControls] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
+
+  // Spacing & Typography state for ATS 1-page tuning
+  const [spacing, setSpacing] = useState<SpacingConfig>({
+    fontSize: 12,
+    lineHeight: 1.45,
+    sectionGap: 8,
+    projectGap: 6,
+    summarySkillsGap: 8,
+    skillsProjectsGap: 8,
+    bulletGap: 2,
+    paddingX: 36,
+    paddingY: 28,
+  });
+
+  // Presets for quick fitting
+  const applyPreset = (preset: "compact" | "normal" | "spacious") => {
+    if (preset === "compact") {
+      setSpacing({
+        fontSize: 11.5,
+        lineHeight: 1.35,
+        sectionGap: 5,
+        projectGap: 4,
+        summarySkillsGap: 5,
+        skillsProjectsGap: 5,
+        bulletGap: 1,
+        paddingX: 28,
+        paddingY: 20,
+      });
+      setSaveToast("Applied Compact (1-Page Fit) spacing");
+    } else if (preset === "normal") {
+      setSpacing({
+        fontSize: 12,
+        lineHeight: 1.45,
+        sectionGap: 8,
+        projectGap: 6,
+        summarySkillsGap: 8,
+        skillsProjectsGap: 8,
+        bulletGap: 2,
+        paddingX: 36,
+        paddingY: 28,
+      });
+      setSaveToast("Applied Balanced spacing");
+    } else if (preset === "spacious") {
+      setSpacing({
+        fontSize: 12.5,
+        lineHeight: 1.55,
+        sectionGap: 12,
+        projectGap: 8,
+        summarySkillsGap: 12,
+        skillsProjectsGap: 12,
+        bulletGap: 4,
+        paddingX: 42,
+        paddingY: 34,
+      });
+      setSaveToast("Applied Spacious layout");
+    }
+    setTimeout(() => setSaveToast(null), 2500);
+  };
 
   // Clear any legacy localStorage keys
   useEffect(() => {
@@ -111,12 +172,27 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
             </span>
           </div>
           <p className="text-xs text-[#AAB4C5] font-medium pt-0.5">
-            Click any text directly on the resume to edit, or match keywords from target JDs below.
+            Click any text directly on the resume to edit, or customize padding and gaps below.
           </p>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* Spacing & Layout Customizer Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowSpacingControls((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+              showSpacingControls
+                ? "bg-[#6366F1]/20 border-[#6366F1] text-[#A5B4FC]"
+                : "bg-[#181F30] hover:bg-[#232B3B] border-[#232B3B] text-[#F8F8F8]"
+            }`}
+          >
+            <Sliders size={14} className={showSpacingControls ? "text-[#818CF8]" : "text-[#AAB4C5]"} />
+            <span>Layout & Spacing</span>
+            {showSpacingControls ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+
           {/* Toggle JD Keyword Matcher */}
           <button
             type="button"
@@ -152,8 +228,9 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
           <button
             type="button"
             onClick={() => {
-              if (window.confirm("Reset all resume edits back to default?")) {
+              if (window.confirm("Reset all resume edits and spacing back to default?")) {
                 handleResetResume();
+                applyPreset("normal");
               }
             }}
             className="p-2 rounded-xl bg-[#181F30] hover:bg-rose-500/20 text-[#667085] hover:text-rose-400 border border-[#232B3B] transition-colors cursor-pointer"
@@ -163,6 +240,184 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Granular Spacing & Layout Customizer Panel */}
+      {showSpacingControls && (
+        <div className="p-4 rounded-2xl bg-[#0D1524] border border-[#1F293D] text-left space-y-4 shadow-xl print-hide animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#1A2538] pb-3">
+            <div className="flex items-center gap-2">
+              <Sliders size={16} className="text-[#818CF8]" />
+              <h3 className="text-sm font-bold text-[#F8F8F8]">
+                Resume Layout, Padding & Line Height Customizer
+              </h3>
+            </div>
+            {/* Quick Presets */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-[#64748B] font-semibold mr-1">Presets:</span>
+              <button
+                type="button"
+                onClick={() => applyPreset("compact")}
+                className="px-2.5 py-1 rounded-lg bg-[#182338] hover:bg-[#202E45] border border-[#232B3B] text-[11px] font-bold text-[#CBD5E1] transition-colors cursor-pointer"
+              >
+                Compact (Fit 1 Page)
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset("normal")}
+                className="px-2.5 py-1 rounded-lg bg-[#182338] hover:bg-[#202E45] border border-[#232B3B] text-[11px] font-bold text-[#818CF8] transition-colors cursor-pointer"
+              >
+                Balanced
+              </button>
+              <button
+                type="button"
+                onClick={() => applyPreset("spacious")}
+                className="px-2.5 py-1 rounded-lg bg-[#182338] hover:bg-[#202E45] border border-[#232B3B] text-[11px] font-bold text-[#CBD5E1] transition-colors cursor-pointer"
+              >
+                Spacious
+              </button>
+            </div>
+          </div>
+
+          {/* Granular Sliders Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* 1. Page Padding X (Horizontal) */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Page Horizontal Margin (Padding X)</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.paddingX}px</span>
+              </div>
+              <input
+                type="range"
+                min="16"
+                max="56"
+                step="2"
+                value={spacing.paddingX}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, paddingX: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 2. Page Padding Y (Vertical Top & Bottom) */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Page Top/Bottom Margin (Padding Y)</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.paddingY}px</span>
+              </div>
+              <input
+                type="range"
+                min="12"
+                max="48"
+                step="2"
+                value={spacing.paddingY}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, paddingY: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 3. Line Height */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Line Height / Leading</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.lineHeight.toFixed(2)}</span>
+              </div>
+              <input
+                type="range"
+                min="1.2"
+                max="1.7"
+                step="0.05"
+                value={spacing.lineHeight}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, lineHeight: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 4. Gap: Professional Summary -> Technical Skills */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Summary → Skills Gap</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.summarySkillsGap ?? spacing.sectionGap}px</span>
+              </div>
+              <input
+                type="range"
+                min="2"
+                max="24"
+                step="1"
+                value={spacing.summarySkillsGap ?? spacing.sectionGap}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, summarySkillsGap: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 5. Gap: Technical Skills -> Projects */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Skills → Projects Gap</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.skillsProjectsGap ?? spacing.sectionGap}px</span>
+              </div>
+              <input
+                type="range"
+                min="2"
+                max="24"
+                step="1"
+                value={spacing.skillsProjectsGap ?? spacing.sectionGap}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, skillsProjectsGap: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 6. Gap Between Individual Projects */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Between Projects Gap</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.projectGap}px</span>
+              </div>
+              <input
+                type="range"
+                min="2"
+                max="20"
+                step="1"
+                value={spacing.projectGap}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, projectGap: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 7. Bullet Points Spacing */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Project Bullet Points Gap</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.bulletGap ?? 2}px</span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="8"
+                step="1"
+                value={spacing.bulletGap ?? 2}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, bulletGap: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+
+            {/* 8. Font Size */}
+            <div className="space-y-1.5 bg-[#121B2D] p-3 rounded-xl border border-[#1A2538]">
+              <div className="flex justify-between items-center text-xs">
+                <span className="font-semibold text-[#CBD5E1]">Base Typography Size</span>
+                <span className="font-mono text-[#818CF8] font-bold">{spacing.fontSize}px</span>
+              </div>
+              <input
+                type="range"
+                min="10.5"
+                max="14"
+                step="0.25"
+                value={spacing.fontSize}
+                onChange={(e) => setSpacing((prev) => ({ ...prev, fontSize: Number(e.target.value) }))}
+                className="w-full accent-[#6366F1] cursor-pointer"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Target JD Keyword Matcher & Alignment Panel */}
       {showJDMatcher && (
@@ -189,6 +444,7 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
       <div className="flex justify-center w-full py-2">
         <ResumeDocument
           resume={resume}
+          spacing={spacing}
           onEditableBlur={handleInlineBlur}
           isEditable={true}
         />
