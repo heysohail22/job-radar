@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Sidebar, type NavTab } from "../components/Sidebar";
 import { Header } from "../components/Header";
-import { JobsFeed } from "../components/JobsFeed";
+import { JobsFeed, isRemoteJob } from "../components/JobsFeed";
 import { JobDetailPane } from "../components/JobDetailPane";
 import { ResumeView } from "../components/ResumeView";
 import { Sparkles, Flame, X, Loader2, CheckCircle, AlertCircle, Home as HomeIcon, FileText, Search } from "lucide-react";
@@ -28,7 +28,7 @@ export default function Home() {
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState<boolean>(false);
   const [activePillFilter, setActivePillFilter] = useState<string>("all");
   // Start with defaultJobs on initial render; Supabase live data syncs immediately
-  const [jobs, setJobs] = useState<JobPostingItem[]>(defaultJobs);
+  const [jobs, setJobs] = useState<JobPostingItem[]>(defaultJobs.filter(isRemoteJob));
   const [selectedJob, setSelectedJob] = useState<JobPostingItem | null>(defaultJobs[0] || null);
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [isFetchingBackend, setIsFetchingBackend] = useState<boolean>(false);
@@ -64,11 +64,11 @@ export default function Home() {
   // Firecrawl modal state
   const [isFirecrawlOpen, setIsFirecrawlOpen] = useState<boolean>(false);
   const [firecrawlKey, setFirecrawlKey] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("Gen AI Intern YC");
+  const [searchQuery, setSearchQuery] = useState<string>("Remote Gen AI Intern");
 
   // Google Jobs modal state
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState<boolean>(false);
-  const [googleQuery, setGoogleQuery] = useState<string>("Gen AI Intern India");
+  const [googleQuery, setGoogleQuery] = useState<string>("Remote Gen AI Intern");
   const [isSearchingGoogle, setIsSearchingGoogle] = useState<boolean>(false);
 
   // Helper to merge newly fetched/scraped jobs with existing jobs:
@@ -101,8 +101,9 @@ export default function Home() {
       return { compTitleKey, urlKey };
     };
 
-    // 1. Add incoming jobs, preserving applied status if candidate already marked it
+    // 1. Add incoming jobs (strictly remote only), preserving applied status if candidate already marked it
     for (const job of incoming) {
+      if (!isRemoteJob(job)) continue;
       const { compTitleKey, urlKey } = getKeys(job);
       if (seenKeys.has(job.id) || seenKeys.has(compTitleKey) || (urlKey && seenKeys.has(urlKey))) {
         continue;
@@ -125,8 +126,9 @@ export default function Home() {
       });
     }
 
-    // 2. Keep existing jobs (in full sync from DB, prune stale unapplied items; retain all applied jobs)
+    // 2. Keep existing jobs (strictly remote only; in full sync from DB, prune stale unapplied items; retain all applied jobs)
     for (const job of current) {
+      if (!isRemoteJob(job)) continue;
       if (isFullSync && !job.isApplied) {
         continue;
       }
@@ -747,11 +749,11 @@ export default function Home() {
                 </label>
                 <div className="flex flex-wrap gap-1.5">
                   {[
-                    "Gen AI Intern India",
-                    "GenAI Product Builder Intern Bengaluru",
-                    "AI Engineer GenAI Applications India",
+                    "Remote Gen AI Intern",
                     "LangGraph Multi-Agent Remote",
-                    "Python FastAPI GenAI India",
+                    "Remote Applied AI Engineer",
+                    "Python FastAPI GenAI Remote",
+                    "Remote RAG Vector Search",
                   ].map((preset) => (
                     <button
                       key={preset}

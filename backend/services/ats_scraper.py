@@ -125,56 +125,49 @@ def is_intern_or_early_role(title: str, emp_type: str = "", total_jobs_at_compan
 
     return False
 
+def is_remote_job(location: str, title: str = "", text: str = "") -> bool:
+    """Checks whether a position is remote regardless of whether based in India or globally."""
+    comb = f"{location} {title}".lower()
+    
+    # Positive remote keywords
+    remote_pattern = r"\b(remote|worldwide|anywhere|work\s*from\s*home|wfh|telecommute|distributed|virtual|global\s*remote|remote\s*-\s*anywhere|anywhere\s*in\s*the\s*world)\b"
+    if re.search(remote_pattern, comb):
+        return True
+        
+    # Check text for explicit remote signals
+    if re.search(r"\b(100%\s*remote|fully\s*remote|remote\s*first|work\s*from\s*anywhere|remote\s*friendly)\b", text[:800].lower()):
+        return True
+        
+    return False
+
 def is_india_location(location: str, title: str = "", text: str = "") -> bool:
     combined = f"{location} {title} {text}".lower()
-    return bool(re.search(r"\b(india|bengaluru|bangalore|hyderabad|pune|gurgaon|gurugram|delhi|ncr|mumbai|noida|chennai|kochi|ind\b|remote\s*-\s*india|india\s*remote)\b", combined))
+    return bool(re.search(r"\b(india|bengaluru|bangalore|hyderabad|pune|gurgaon|gurugram|delhi|ncr|mumbai|noida|chennai|kochi|ind\b)\b", combined))
 
 def is_eligible_candidate_location(location: str, title: str = "", text: str = "") -> bool:
     """
-    Keep ONLY jobs that:
-    1. Hire from India (located in India / India Remote), OR
-    2. Are Foreign/Global companies that allow Worldwide / Work-from-Anywhere Remote (eligible for Indian candidates).
+    STRICT REQUIREMENT: Candidate ONLY wants to target REMOTE jobs.
+    It does NOT matter whether the company/job is from India or outside (worldwide/US/global)
+    as long as the role is REMOTE.
     
-    Reject any job that is on-site abroad (US, UK, Europe, etc.) or restricted to specific foreign countries 
-    (e.g., US Only, North America Only, EU Only, requires US work authorization).
+    Any on-site / in-office role is strictly rejected.
     """
     comb = f"{location} {title} {text}".lower()
     
-    # 1. India check (Direct match)
-    if is_india_location(location, title, text):
-        return True
+    # 1. Gate 1: Must be a Remote job
+    if not is_remote_job(location, title, text):
+        return False
         
-    # 2. Strict Foreign Geo-Restrictions (Reject)
-    restricted_patterns = [
-        r"\b(us\s*only|usa\s*only|united\s*states\s*only|u\.s\.\s*only)\b",
-        r"\b(north\s*america\s*only|na\s*only)\b",
-        r"\b(canada\s*only)\b",
-        r"\b(eu\s*only|europe\s*only|uk\s*only|united\s*kingdom\s*only)\b",
-        r"\b(latin\s*america\s*only|latam\s*only)\b",
-        r"\b(must\s*(be|reside|live)\s*in\s*(the\s*)?(us|usa|united states|uk|europe|canada))\b",
-        r"\b(us\s*citizen|us\s*work\s*authorization|authorized\s*to\s*work\s*in\s*(the\s*)?us)\b",
-        r"\b(security\s*clearance|ts/sci|polygraph)\b"
+    # 2. Gate 2: Exclude unworkable security clearances / citizenship locks
+    unworkable_patterns = [
+        r"\b(security\s*clearance|ts/sci|polygraph)\b",
+        r"\b(us\s*citizen\s*(only|required)|u\.s\.\s*citizen\s*(only|required))\b"
     ]
-    for pat in restricted_patterns:
+    for pat in unworkable_patterns:
         if re.search(pat, comb):
             return False
             
-    # 3. Check for explicitly allowed worldwide/anywhere remote
-    loc_lower = location.lower()
-    is_explicit_worldwide = bool(re.search(r"\b(worldwide|anywhere|global|all\s*locations?|remote\s*-\s*anywhere|anywhere\s*in\s*the\s*world|apac)\b", loc_lower))
-    if is_explicit_worldwide:
-        return True
-        
-    if "remote" in loc_lower:
-        # Check if location specifies a foreign country/city
-        foreign_geos = r"\b(united\s*states|usa?\b|u\.s\.?|san\s*francisco|new\s*york|seattle|austin|chicago|los\s*angeles|california|london|berlin|paris|toronto|canada|germany|france|netherlands|amsterdam|uk\b|ireland|dublin|singapore|australia|sydney)\b"
-        if re.search(foreign_geos, loc_lower):
-            return False
-        # Generic remote without negative restriction -> allowed
-        return True
-        
-    # On-site abroad -> Reject
-    return False
+    return True
 
 def is_candidate_skills_match(title: str, desc: str = "", tech_stack: List[str] = None) -> bool:
     """Ensure the job has meaningful alignment with candidate's actual technical capabilities."""
@@ -217,10 +210,7 @@ def compute_candidate_match(title: str, desc: str, stage: str, tech_stack: List[
     score += min(len(matched_skills) * 3, 14)
     
     # Priority boosts
-    reasons = []
-    if is_india:
-        score += 3
-        reasons.append("🇮🇳 India Role")
+    reasons = ["🌐 100% Remote"]
     if is_fresher:
         score += 3
         reasons.append("🎓 Fresher / Intern Friendly")
@@ -238,11 +228,7 @@ def compute_candidate_match(title: str, desc: str, stage: str, tech_stack: List[
     matched_display = ", ".join(matched_skills[:3]) if matched_skills else "Python & AI Engineering"
     main_reason = f"{stage_desc}. Matches your stack in {matched_display}."
     
-    if reasons:
-        full_reason = f"{' | '.join(reasons)} — {main_reason}"
-    else:
-        full_reason = main_reason
-        
+    full_reason = f"{' | '.join(reasons)} — {main_reason}"
     score = min(max(score, 80), 99)
     return score, full_reason
 
@@ -251,7 +237,7 @@ def is_intern_role_simple(title: str, emp_type: str = "") -> bool:
     cleaned = re.sub(r"\b(internal|international)\b", "", t)
     return bool(re.search(r"\b(intern|interns|internship|student|co-op|coop|apprentice|fellow|fellowship|junior|new grad)\b", cleaned)) or "intern" in emp_type.lower()
 
-# Baseline authentic Curated GenAI Intern Roles strictly matched to candidate's stack
+# Baseline authentic Curated GenAI 100% REMOTE Roles strictly matched to candidate's stack
 CURATED_JOBS: List[JobPosting] = [
     JobPosting(
         id="curated-langchain-intern",
@@ -264,7 +250,7 @@ CURATED_JOBS: List[JobPosting] = [
         source="Greenhouse",
         tech_stack=["LangChain", "LangGraph", "Multi-Agent Workflows", "Autonomous Tool Calling", "FastAPI (REST & SSE)", "Python"],
         match_score=98,
-        match_reason="🎓 Fresher / Intern Friendly — Direct fit: LangGraph, LangChain, Multi-Agent Workflows, and Autonomous Tool Calling.",
+        match_reason="🌐 100% Remote | 🎓 Fresher / Intern Friendly — Direct fit: LangGraph, LangChain, Multi-Agent Workflows, and Autonomous Tool Calling.",
         is_internship=True,
         company_stage="Series A (Agent Framework)",
         is_india=False,
@@ -273,51 +259,17 @@ CURATED_JOBS: List[JobPosting] = [
     JobPosting(
         id="curated-composio-applied-ai",
         company="Composio",
-        title="Member Technical Staff - Applied AI Engineer",
-        location="Bangalore, India",
+        title="Applied AI Engineer - Autonomous Tool Calling & Agents",
+        location="Remote (Worldwide)",
         url="https://jobs.ashbyhq.com/composio/a2fd44d1-1457-4248-8d9c-905953016398",
-        description="Build autonomous tool-calling integrations, multi-agent execution pipelines, and agent reliability guardrails for 200+ developer tools. Working with LangChain, LangGraph, and Python.",
+        description="Build autonomous tool-calling integrations, multi-agent execution pipelines, and agent reliability guardrails for 200+ developer tools. Working with LangChain, LangGraph, and Python in a distributed remote team.",
         posted_date="Recently",
         source="Ashby",
         tech_stack=["Autonomous Tool Calling", "Multi-Agent Workflows", "LangGraph", "LangChain", "FastAPI (REST & SSE)", "Python"],
         match_score=98,
-        match_reason="🇮🇳 India Role | 🎓 Fresher / Intern Friendly — Direct founder review. Core alignment with your Tool Calling, LangGraph & Multi-Agent stack.",
+        match_reason="🌐 100% Remote | 🎓 Fresher / Intern Friendly — Direct founder review. Core alignment with your Tool Calling, LangGraph & Multi-Agent stack.",
         is_internship=False,
         company_stage="Seed (Agent Tooling & Workflows)",
-        is_india=True,
-        is_fresher=True
-    ),
-    JobPosting(
-        id="curated-sarvam-agent-eng",
-        company="Sarvam AI",
-        title="Agent Engineer (Early Career / Intern)",
-        location="Bengaluru, India",
-        url="https://jobs.ashbyhq.com/sarvam/f3376204-1c2d-42a8-bf4a-1a0eec2fbc3c",
-        description="Design and deploy frontier GenAI agents, contextual retrieval systems (RAG), and evaluation pipelines using Python, FastAPI, and PyTorch for India's premier sovereign AI lab.",
-        posted_date="Recently",
-        source="Ashby",
-        tech_stack=["Multi-Agent Workflows", "RAG & Vector Search", "FastAPI (REST & SSE)", "PyTorch", "Python"],
-        match_score=97,
-        match_reason="🇮🇳 India Role | 🎓 Fresher / Intern Friendly — Seed team (India GenAI Lab). Strong fit for your Agent, RAG & FastAPI background.",
-        is_internship=True,
-        company_stage="Seed (India GenAI Lab)",
-        is_india=True,
-        is_fresher=True
-    ),
-    JobPosting(
-        id="curated-scaleai-fde-india",
-        company="Scale AI",
-        title="Forward Deployed Engineer, Gen AI",
-        location="Bengaluru, India",
-        url="https://boards.greenhouse.io/scaleai/jobs/4523992005",
-        description="Deploy enterprise generative AI solutions, RAG pipelines, and model evaluation guardrails for mission-critical client applications. Working with Python, FastAPI, and LangChain.",
-        posted_date="Recently",
-        source="Greenhouse",
-        tech_stack=["RAG & Vector Search", "Pydantic Guardrails", "LangChain", "FastAPI (REST & SSE)", "AWS & Docker (CI/CD)", "Python"],
-        match_score=96,
-        match_reason="🇮🇳 India Role — High callback GenAI team. Strong fit for your RAG, Guardrails, and FastAPI stack.",
-        is_internship=False,
-        company_stage="Growth (AI Data & Evals)",
         is_india=True,
         is_fresher=True
     ),
@@ -331,14 +283,13 @@ CURATED_JOBS: List[JobPosting] = [
         posted_date="Recently",
         source="Ashby",
         tech_stack=["Multi-Agent Workflows", "Vector DB", "pgvector & Supabase", "FastAPI (REST & SSE)", "Next.js & React", "Python"],
-        match_score=96,
-        match_reason="🚀 Direct founder review (Seed). Matches your stack in Context Engineering, pgvector, Vector DB & FastAPI.",
+        match_score=97,
+        match_reason="🌐 100% Remote — Direct founder review (Seed). Matches your stack in Context Engineering, pgvector, Vector DB & FastAPI.",
         is_internship=False,
         company_stage="Seed (Agent Memory)",
         is_india=False,
         is_fresher=True
     ),
-
     JobPosting(
         id="curated-llamaindex-rag-eng",
         company="LlamaIndex",
@@ -350,9 +301,60 @@ CURATED_JOBS: List[JobPosting] = [
         source="Ashby",
         tech_stack=["Corrective RAG (CRAG)", "RAG & Vector Search", "Ragas & DeepEval", "Vector DB", "Python", "TypeScript"],
         match_score=96,
-        match_reason="⚡ High Callback: Series A team (LLM Data). Core alignment with your Corrective RAG (CRAG) & Vector DB stack.",
+        match_reason="🌐 100% Remote — Series A team (LLM Data). Core alignment with your Corrective RAG (CRAG) & Vector DB stack.",
         is_internship=False,
         company_stage="Series A (LLM Data)",
+        is_india=False,
+        is_fresher=True
+    ),
+    JobPosting(
+        id="curated-vapi-agent-eng",
+        company="Vapi",
+        title="Member of Technical Staff - Agentic Developer Experience",
+        location="Remote (Worldwide)",
+        url="https://jobs.ashbyhq.com/vapi/0d4f1420-2590-4a38-aac4-3efda12eadb0",
+        description="Develop real-time autonomous voice agents, function-calling harnesses, and streaming low-latency LLM orchestration pipelines using Python and FastAPI.",
+        posted_date="Recently",
+        source="Ashby",
+        tech_stack=["Multi-Agent Workflows", "Autonomous Tool Calling", "FastAPI (REST & SSE)", "Python", "TypeScript"],
+        match_score=96,
+        match_reason="🌐 100% Remote — Frontier voice agent platform. Strong fit for your Autonomous Tool Calling & FastAPI streaming stack.",
+        is_internship=False,
+        company_stage="Seed (Voice AI & Agents)",
+        is_india=False,
+        is_fresher=True
+    ),
+    JobPosting(
+        id="curated-perplexity-model-eng",
+        company="Perplexity AI",
+        title="Member of Technical Staff (Model Behavior & Retrieval)",
+        location="Remote (Worldwide)",
+        url="https://jobs.ashbyhq.com/perplexity/2c6ae16b-d03e-4e33-9d32-362c5388e956",
+        description="Build cutting-edge conversational search retrieval pipelines, prompt evaluations, and model behavior guardrails using Python, PyTorch, and Vector Search.",
+        posted_date="Recently",
+        source="Ashby",
+        tech_stack=["RAG & Vector Search", "Pydantic Guardrails", "PyTorch", "Python", "Vector DB"],
+        match_score=95,
+        match_reason="🌐 100% Remote — High callback frontier AI search team. Matches your RAG, Vector Search & Guardrails capabilities.",
+        is_internship=False,
+        company_stage="Series B (Conversational Search)",
+        is_india=False,
+        is_fresher=True
+    ),
+    JobPosting(
+        id="curated-cognition-applied-eng",
+        company="Cognition",
+        title="Applied AI & Systems Engineer (Devin Autonomous Platform)",
+        location="Remote (Global)",
+        url="https://jobs.ashbyhq.com/cognition/1e47fa81-bfe3-436c-a6f7-fccd66a98b1e",
+        description="Develop autonomous software engineering agents, tool integration sandbox environments, and LLM reasoning loops with Python, TypeScript, and Docker.",
+        posted_date="Recently",
+        source="Ashby",
+        tech_stack=["Multi-Agent Workflows", "Autonomous Tool Calling", "Docker", "Python", "TypeScript"],
+        match_score=95,
+        match_reason="🌐 100% Remote — Creators of Devin AI. Ideal fit for your Agent Workflows, Tool Calling & Docker deployment skills.",
+        is_internship=False,
+        company_stage="Series A (Devin Autonomous AI)",
         is_india=False,
         is_fresher=True
     ),
@@ -382,9 +384,14 @@ async def fetch_ashby_jobs(company: str, stage: str = "Seed / Series A") -> List
                     
                 if is_intern_or_early_role(title, emp_type, len(job_list)):
                     clean_desc = desc[:1000]
-                    location = j.get("location") or ("Remote (Worldwide)" if j.get("isRemote") else "Remote")
+                    is_remote_flag = bool(j.get("isRemote"))
+                    raw_loc = (j.get("location") or "").strip()
+                    if is_remote_flag:
+                        location = f"Remote ({raw_loc})" if raw_loc and "remote" not in raw_loc.lower() else (raw_loc or "Remote (Worldwide)")
+                    else:
+                        location = raw_loc or "Remote"
                     
-                    # 1. Location filter (India or Worldwide Remote only)
+                    # 1. Location filter (Must be strictly Remote)
                     if not is_eligible_candidate_location(location, title, clean_desc):
                         continue
                         
@@ -545,18 +552,18 @@ async def fetch_lever_jobs(company: str, stage: str = "Seed / Series A") -> List
 
 async def fetch_yc_startup_jobs() -> List[JobPosting]:
     """Pulls authentic live Y Combinator startup engineering & AI postings directly from YC,
-    specifically querying AI interns, LLM engineers, Agents, RAG, and India YC startups."""
+    specifically querying 100% remote AI, LLM, Agent, and RAG opportunities."""
     async with httpx.AsyncClient(timeout=8.0) as client:
         jobs = []
         seen_ids = set()
         
         queries = [
-            "https://hn.algolia.com/api/v1/search_by_date?query=ai%20intern&tags=job&hitsPerPage=25",
-            "https://hn.algolia.com/api/v1/search_by_date?query=llm&tags=job&hitsPerPage=25",
-            "https://hn.algolia.com/api/v1/search_by_date?query=agent&tags=job&hitsPerPage=25",
-            "https://hn.algolia.com/api/v1/search_by_date?query=rag&tags=job&hitsPerPage=25",
-            "https://hn.algolia.com/api/v1/search_by_date?query=india&tags=job&hitsPerPage=25",
-            "https://hn.algolia.com/api/v1/search_by_date?query=intern&tags=job&hitsPerPage=25",
+            "https://hn.algolia.com/api/v1/search_by_date?query=remote%20ai&tags=job&hitsPerPage=25",
+            "https://hn.algolia.com/api/v1/search_by_date?query=remote%20intern&tags=job&hitsPerPage=25",
+            "https://hn.algolia.com/api/v1/search_by_date?query=remote%20llm&tags=job&hitsPerPage=25",
+            "https://hn.algolia.com/api/v1/search_by_date?query=remote%20agent&tags=job&hitsPerPage=25",
+            "https://hn.algolia.com/api/v1/search_by_date?query=remote%20rag&tags=job&hitsPerPage=25",
+            "https://hn.algolia.com/api/v1/search_by_date?query=remote%20python&tags=job&hitsPerPage=25",
         ]
         
         for q_url in queries:
@@ -590,16 +597,17 @@ async def fetch_yc_startup_jobs() -> List[JobPosting]:
                     if not is_genai_relevant(title, story_text, comp_name):
                         continue
                         
-                    is_india = is_india_location("", title, story_text)
-                    if is_india:
-                        loc_match = re.search(r"(bengaluru|bangalore|chennai|delhi|gurgaon|gurugram|pune|mumbai|hyderabad|noida)", f"{title} {story_text}".lower())
-                        location = f"{loc_match.group(1).title() if loc_match else 'Bengaluru'}, India"
-                    elif re.search(r"\b(remote|anywhere|worldwide)\b", f"{title} {story_text}".lower()):
-                        location = "Remote (Worldwide)"
-                    else:
+                    # Must be explicitly Remote
+                    if not is_remote_job("", title, story_text):
                         continue
                         
-                    # Location check
+                    is_india = is_india_location("", title, story_text)
+                    if is_india:
+                        location = "Remote - India"
+                    else:
+                        location = "Remote (Worldwide)"
+                        
+                    # Location eligibility check
                     if not is_eligible_candidate_location(location, title, story_text):
                         continue
                         

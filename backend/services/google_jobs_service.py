@@ -68,22 +68,22 @@ async def call_gemini_json_api(prompt: str) -> Optional[List[Dict[str, Any]]]:
 
     return None
 
-async def scrape_google_jobs(query: str = "Gen AI Intern India") -> List[JobPosting]:
+async def scrape_google_jobs(query: str = "Remote Gen AI Intern") -> List[JobPosting]:
     """
     Searches Google Jobs index (Indeed, LinkedIn, Shine, Glassdoor, Jobrapido, Lever)
-    using Firecrawl web search and parses raw snippets into structured JobPosting objects using Gemini Flash.
+    using Firecrawl web search and parses raw snippets into structured 100% Remote JobPosting objects using Gemini Flash.
     """
     app = get_firecrawl_client()
     if not app:
         print("Firecrawl API key is missing or invalid.")
         return []
 
-    clean_query = query.strip() if query else "Gen AI Intern India"
+    clean_query = query.strip() if query else "Remote Gen AI Intern"
 
-    # Search queries capturing real Google Jobs index aggregations
+    # Search queries specifically targeting remote roles
     search_queries = [
-        f"{clean_query} Indeed OR Shine OR LinkedIn",
-        f"GenAI Product Builder Intern Bengaluru Epifi OR Indeed OR Lever",
+        f"{clean_query} remote Indeed OR Shine OR LinkedIn",
+        f"Remote Gen AI Engineer Intern Indeed OR Lever OR Wellfound",
     ]
 
     all_raw_snippets = []
@@ -110,10 +110,10 @@ async def scrape_google_jobs(query: str = "Gen AI Intern India") -> List[JobPost
     combined_text = "\n---\n".join(all_raw_snippets[:10])
 
     prompt = f"""You are an expert technical recruiter analyzing real job search listings from Google Jobs (aggregating Indeed, LinkedIn, Shine, Glassdoor, Jobrapido, Lever).
-Extract all distinct individual job opportunities mentioned in the text into a JSON array of objects.
+Extract all distinct individual REMOTE job opportunities mentioned in the text into a JSON array of objects.
 
 Rules:
-1. ONLY include jobs located in India (Bengaluru, Pune, Hyderabad, Mumbai, Delhi, Gurgaon, Chennai, etc.) OR Worldwide / Remote.
+1. ONLY include REMOTE jobs (e.g. Remote, Worldwide, Anywhere, Remote - India, Remote US/Global). STRICTLY REJECT any on-site office jobs (jobs that require working in-office with no remote option).
 2. Filter for roles relevant to: GenAI, AI Interns, Machine Learning, Python, LLMs, Agents, RAG, Software Engineers.
 3. For "url", use the EXACT direct link mentioned in the text (e.g. https://in.indeed.com/..., https://jobs.lever.co/..., https://in.linkedin.com/..., etc.).
 4. For "source", identify the platform, e.g. "Google (via Indeed)", "Google (via Shine)", "Google (via Jobrapido)", "Google (via Lever)", "Google (via LinkedIn)".
@@ -123,13 +123,13 @@ Output JSON array format:
   {{
     "company": "Company Name",
     "title": "Exact Title",
-    "location": "City, India or Remote (Worldwide)",
+    "location": "Remote (Worldwide) or Remote - India",
     "url": "Direct link",
     "description": "Short 2-3 sentence summary of the job responsibilities and stack",
     "source": "Google (via Indeed) or Google (via Shine) etc.",
     "tech_stack": ["Python", "LLMs", "FastAPI"],
     "is_internship": true,
-    "is_india": true
+    "is_india": false
   }}
 ]
 

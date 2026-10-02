@@ -10,11 +10,25 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_FILTER_FACETS = [
     {
-        "id": "india",
-        "label": "India Roles",
+        "id": "all",
+        "label": "All Remote Roles",
+        "emoji": "🌐",
+        "keywords": ["remote", "worldwide", "anywhere", "global"],
+        "field": "location"
+    },
+    {
+        "id": "global_remote",
+        "label": "Global / Worldwide",
+        "emoji": "🌍",
+        "keywords": ["worldwide", "global", "anywhere", "remote (worldwide)", "us remote"],
+        "field": "location"
+    },
+    {
+        "id": "india_remote",
+        "label": "India Remote",
         "emoji": "🇮🇳",
-        "keywords": ["india", "bengaluru", "bangalore", "hyderabad", "pune", "mumbai", "delhi", "gurgaon", "noida", "chennai"],
-        "field": "location_or_flag"
+        "keywords": ["india", "remote - india", "india remote", "bengaluru (remote)", "bangalore (remote)"],
+        "field": "location"
     },
     {
         "id": "internship",
@@ -45,25 +59,11 @@ DEFAULT_FILTER_FACETS = [
         "field": "tech_or_desc"
     },
     {
-        "id": "google_jobs",
-        "label": "Google Jobs Index",
-        "emoji": "🔎",
-        "keywords": ["google", "indeed", "linkedin", "shine", "glassdoor"],
-        "field": "source"
-    },
-    {
         "id": "startups",
         "label": "Seed & YC Startups",
         "emoji": "🚀",
         "keywords": ["seed", "series a", "yc", "y combinator", "early stage"],
         "field": "company_or_stage"
-    },
-    {
-        "id": "remote",
-        "label": "Worldwide Remote",
-        "emoji": "🌐",
-        "keywords": ["remote", "worldwide", "anywhere", "global"],
-        "field": "location"
     }
 ]
 

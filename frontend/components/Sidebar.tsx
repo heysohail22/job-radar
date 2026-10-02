@@ -38,7 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: "LIVE",
       icon: Home,
       count: null,
-      description: "Verified India & Remote roles",
+      description: "100% Remote GenAI roles",
     },
     {
       id: "applied" as NavTab,

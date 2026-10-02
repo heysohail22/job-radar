@@ -62,7 +62,7 @@ async def trigger_scrape(req: ScrapeRequest):
     key = req.firecrawl_key or settings.FIRECRAWL_API_KEY
     graph_input = {
         "firecrawl_key": key,
-        "search_query": req.search_query or "Gen AI Intern",
+        "search_query": req.search_query or "Remote Gen AI Intern",
         "force_live": True,
         "jobs": []
     }
@@ -77,7 +77,7 @@ async def trigger_scrape(req: ScrapeRequest):
 async def search_google(req: ScrapeRequest):
     """Searches Google Jobs index (Indeed, LinkedIn, Shine, Jobrapido, Lever) using Firecrawl & Gemini Flash."""
     from services.google_jobs_service import scrape_google_jobs
-    query = req.search_query or "Gen AI Intern India"
+    query = req.search_query or "Remote Gen AI Intern"
     jobs = await scrape_google_jobs(query)
     return jobs
 

@@ -37,7 +37,7 @@ async def fetch_live_node(state: JobRadarState) -> Dict[str, Any]:
     tasks.append(fetch_yc_startup_jobs())
     
     # Include live Google Jobs index search
-    tasks.append(scrape_google_jobs(query or "Gen AI Intern India"))
+    tasks.append(scrape_google_jobs(query or "Remote Gen AI Intern"))
     
     for s in startups:
         ats = (s.get("ats") or "ashby").lower()
@@ -68,29 +68,25 @@ async def fetch_live_node(state: JobRadarState) -> Dict[str, Any]:
         if not any(existing.title.lower() == job.title.lower() and existing.company.lower() == job.company.lower() for existing in combined):
             combined.append(job)
             
-    # Prioritize India roles and Fresher/Intern GenAI opportunities
+    # Sort strictly by match score and Fresher/Intern relevance across all remote roles
     def callback_sort_key(j: JobPosting):
-        is_ind = bool(j.is_india)
         is_fresh = bool(j.is_fresher or j.is_internship)
         stage = (j.company_stage or "").lower()
         
-        # Tier 0: India + Fresher / Intern GenAI roles
-        if is_ind and is_fresh:
+        # Tier 0: Fresher / Intern Remote GenAI opportunities (Seed / YC / Series A)
+        if is_fresh and ("seed" in stage or "yc" in stage or "series a" in stage):
             tier = 0
-        # Tier 1: Global GenAI Internships & Freshers (e.g. LangChain, YC AI Interns)
+        # Tier 1: All other Fresher / Intern Remote AI roles
         elif is_fresh:
             tier = 1
-        # Tier 2: India GenAI startup engineering (Sarvam, Composio, Scale AI)
-        elif is_ind:
-            tier = 2
-        # Tier 3: Seed & YC GenAI startups
+        # Tier 2: Seed & YC GenAI startups
         elif "seed" in stage or "yc" in stage:
-            tier = 3
-        # Tier 4: Series A GenAI startups
+            tier = 2
+        # Tier 3: Series A GenAI startups
         elif "series a" in stage:
-            tier = 4
+            tier = 3
         else:
-            tier = 5
+            tier = 4
         return (tier, -j.match_score)
 
     combined.sort(key=callback_sort_key)

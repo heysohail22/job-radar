@@ -141,9 +141,16 @@ export const JobDetailPane: React.FC<JobDetailPaneProps> = ({
                     🚀 {job.companyStage}
                   </span>
                 )}
-                {isIndia && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-[#3B82F6]/20 text-[#60A5FA] border border-[#3B82F6]/40 shadow-xs flex items-center gap-1">
+                  🌐 100% Remote
+                </span>
+                {isIndia ? (
                   <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#F59E0B]/15 text-[#FBBF24] border border-[#F59E0B]/30 shadow-xs">
                     🇮🇳 India
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#8B5CF6]/15 text-[#C4B5FD] border border-[#8B5CF6]/30 shadow-xs">
+                    🌍 Global
                   </span>
                 )}
                 {isIntern && (

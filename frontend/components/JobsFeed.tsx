@@ -44,15 +44,26 @@ interface JobsFeedProps {
 }
 
 const CORE_FACETS: FilterFacet[] = [
-  { id: "all", label: "All Opportunities", emoji: "⚡" },
-  { id: "india", label: "India Roles", emoji: "🇮🇳" },
+  { id: "all", label: "All Remote Roles", emoji: "🌐" },
+  { id: "global_remote", label: "Global / Worldwide", emoji: "🌍" },
+  { id: "india_remote", label: "India Remote", emoji: "🇮🇳" },
   { id: "internship", label: "Internships & Freshers", emoji: "🎓" },
   { id: "agents", label: "LangGraph & Agents", emoji: "🤖" },
   { id: "rag", label: "RAG & Vector DB", emoji: "🔍" },
   { id: "fastapi_python", label: "Python & FastAPI", emoji: "🐍" },
   { id: "startups", label: "Seed & YC Startups", emoji: "🚀" },
-  { id: "remote", label: "Worldwide Remote", emoji: "🌐" },
 ];
+
+export const isRemoteJob = (job: JobPostingItem): boolean => {
+  const loc = (job.location || "").toLowerCase();
+  const title = (job.title || "").toLowerCase();
+  const desc = (job.description || "").slice(0, 500).toLowerCase();
+  return (
+    /remote|worldwide|anywhere|global|wfh|telecommute|distributed|virtual/i.test(loc) ||
+    /remote/i.test(title) ||
+    /100%\s*remote|fully\s*remote|remote\s*first|work\s*from\s*anywhere/i.test(desc)
+  );
+};
 
 export const JobsFeed: React.FC<JobsFeedProps> = ({
   jobs,
@@ -83,16 +94,24 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
   const [isGeneratingAiFilters, setIsGeneratingAiFilters] = useState<boolean>(false);
   const [aiSuccessBadge, setAiSuccessBadge] = useState<string | null>(null);
 
-  // Split into active radar vs applied
-  const activeJobs = useMemo(() => jobs.filter((j) => !j.isApplied), [jobs]);
-  const appliedJobs = useMemo(() => jobs.filter((j) => !!j.isApplied), [jobs]);
+  // Split into active radar vs applied (strictly 100% remote jobs only)
+  const activeJobs = useMemo(() => jobs.filter((j) => !j.isApplied && isRemoteJob(j)), [jobs]);
+  const appliedJobs = useMemo(() => jobs.filter((j) => !!j.isApplied && isRemoteJob(j)), [jobs]);
   const baseJobs = currentTab === "applied" ? appliedJobs : activeJobs;
 
   // Function to evaluate whether a job matches a facet
   const matchesFacet = (job: JobPostingItem, facetId: string, facet?: FilterFacet): boolean => {
-    if (facetId === "all") return true;
-    if (facetId === "india") {
+    if (facetId === "all" || facetId === "remote") return true;
+    if (facetId === "india_remote" || facetId === "india") {
       return Boolean(
+        job.isIndia ||
+          /india|bengaluru|bangalore|hyderabad|pune|delhi|mumbai|chennai|noida|gurgaon/i.test(
+            job.location
+          )
+      );
+    }
+    if (facetId === "global_remote") {
+      return !Boolean(
         job.isIndia ||
           /india|bengaluru|bangalore|hyderabad|pune|delhi|mumbai|chennai|noida|gurgaon/i.test(
             job.location
@@ -126,9 +145,6 @@ export const JobsFeed: React.FC<JobsFeedProps> = ({
     }
     if (facetId === "startups") {
       return /seed|series a|yc|y combinator|early stage/i.test(job.companyStage || "");
-    }
-    if (facetId === "remote") {
-      return /remote|worldwide|anywhere|global/i.test(job.location);
     }
 
     // Dynamic AI facet matching keywords

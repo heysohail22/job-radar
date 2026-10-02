@@ -59,9 +59,16 @@ export const JobCard: React.FC<JobCardProps> = ({
                     🚀 {job.companyStage}
                   </span>
                 )}
-                {isIndia && (
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-[#3B82F6]/20 text-[#60A5FA] border border-[#3B82F6]/35 flex items-center gap-0.5">
+                  🌐 Remote
+                </span>
+                {isIndia ? (
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#F59E0B]/15 text-[#FBBF24] border border-[#F59E0B]/30">
                     🇮🇳 India
+                  </span>
+                ) : (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#8B5CF6]/15 text-[#C4B5FD] border border-[#8B5CF6]/30">
+                    🌍 Global
                   </span>
                 )}
                 {isIntern && (
