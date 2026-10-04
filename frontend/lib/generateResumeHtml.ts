@@ -103,21 +103,21 @@ export function generateResumeHtml(
       user-select: none;
     }
     a {
-      color: #4f46e5;
-      text-decoration: underline;
-      text-decoration-color: #a5b4fc;
+      color: #0f172a;
+      text-decoration: none;
       transition: color 0.15s ease;
     }
     a:hover {
-      color: #312e81;
+      color: #000000;
+      text-decoration: none;
     }
     .contact-link {
-      color: #334155;
+      color: #0f172a;
       text-decoration: none;
     }
     .contact-link:hover {
-      color: #0f172a;
-      text-decoration: underline;
+      color: #000000;
+      text-decoration: none;
     }
     .divider {
       height: 1px;
@@ -218,15 +218,15 @@ export function generateResumeHtml(
     }
     .project-link-item {
       font-weight: 700;
-      color: #4f46e5;
-      text-decoration: underline;
-      text-decoration-color: #a5b4fc;
+      color: #0f172a;
+      text-decoration: none;
       display: inline-flex;
       align-items: center;
       gap: 2px;
     }
     .project-link-item:hover {
-      color: #312e81;
+      color: #000000;
+      text-decoration: none;
     }
     .bullet-list {
       list-style: none;

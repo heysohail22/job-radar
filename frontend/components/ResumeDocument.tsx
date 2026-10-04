@@ -148,7 +148,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
               <span className="text-slate-300 select-none">•</span>
               <a
                 href={resume.contact.linkedin}
-                className="text-slate-700 hover:text-slate-900 transition-colors underline decoration-slate-300 cursor-pointer relative z-20 pointer-events-auto"
+                className="text-slate-900 hover:text-black transition-colors no-underline cursor-pointer relative z-20 pointer-events-auto"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
@@ -165,7 +165,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
               <span className="text-slate-300 select-none">•</span>
               <a
                 href={resume.contact.github}
-                className="text-slate-700 hover:text-slate-900 transition-colors underline decoration-slate-300 cursor-pointer relative z-20 pointer-events-auto"
+                className="text-slate-900 hover:text-black transition-colors no-underline cursor-pointer relative z-20 pointer-events-auto"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => {
@@ -293,7 +293,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                               e.stopPropagation();
                               window.open(link.url, "_blank", "noopener,noreferrer");
                             }}
-                            className="inline-flex items-center gap-0.5 text-indigo-600 hover:text-indigo-900 font-bold underline decoration-indigo-300 hover:decoration-indigo-600 transition-colors cursor-pointer relative z-20 pointer-events-auto"
+                            className="inline-flex items-center gap-0.5 text-slate-900 hover:text-black font-bold no-underline transition-colors cursor-pointer relative z-20 pointer-events-auto"
                             title={`Open ${link.label} (${link.url})`}
                           >
                             <span>{link.label}</span>

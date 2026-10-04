@@ -124,6 +124,7 @@ html, body {
   }
 
   a, a:visited {
+    color: #0f172a !important;
     text-decoration: none !important;
   }
 
