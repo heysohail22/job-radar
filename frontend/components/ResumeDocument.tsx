@@ -1,17 +1,9 @@
-import React from "react";
-import type { ResumeDataType } from "../lib/resumeData";
+"use client";
 
-export interface SpacingConfig {
-  fontSize: number;
-  lineHeight: number;
-  sectionGap: number;
-  projectGap: number;
-  summarySkillsGap?: number;
-  skillsProjectsGap?: number;
-  bulletGap?: number;
-  paddingX: number;
-  paddingY: number;
-}
+import React from "react";
+import type { ResumeDataType, SpacingConfig } from "../lib/resumeData";
+
+export type { SpacingConfig };
 
 interface ResumeDocumentProps {
   resume: ResumeDataType;
@@ -69,7 +61,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
           "--resume-section-gap": `${sectionGap}px`,
         } as React.CSSProperties
       }
-      className="w-full max-w-[794px] bg-white text-slate-900 shadow-2xl rounded-2xl border border-slate-200 relative overflow-hidden transition-all duration-150 ease-out print:overflow-visible print:m-0 print:shadow-none print:border-none print:w-full print:rounded-none max-md:p-4 text-left font-sans"
+      className="w-full max-w-[794px] bg-white text-slate-900 shadow-2xl rounded-2xl border border-slate-200 relative overflow-hidden transition-all duration-150 ease-out print:overflow-visible print:m-0 print:shadow-none print:border-none print:w-[210mm] print:max-w-[210mm] print:rounded-none max-md:p-4 text-left font-sans"
     >
       {/* Edit Hint Banner (Non-printable) */}
       {isEditable && (
@@ -87,7 +79,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
       )}
 
       {/* Header - Centered Layout */}
-      <header className="flex flex-col items-center text-center mb-2 print:mb-1.5">
+      <div className="resume-header flex flex-col items-center text-center mb-2 print:mb-1.5">
         <h1
           contentEditable={isEditable}
           suppressContentEditableWarning
@@ -156,9 +148,13 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
               <span className="text-slate-300 select-none">•</span>
               <a
                 href={resume.contact.linkedin}
-                className="text-slate-700 hover:text-slate-900 transition-colors underline decoration-slate-300"
+                className="text-slate-700 hover:text-slate-900 transition-colors underline decoration-slate-300 cursor-pointer relative z-20 pointer-events-auto"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(resume.contact.linkedin, "_blank", "noopener,noreferrer");
+                }}
               >
                 LinkedIn
               </a>
@@ -169,16 +165,20 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
               <span className="text-slate-300 select-none">•</span>
               <a
                 href={resume.contact.github}
-                className="text-slate-700 hover:text-slate-900 transition-colors underline decoration-slate-300"
+                className="text-slate-700 hover:text-slate-900 transition-colors underline decoration-slate-300 cursor-pointer relative z-20 pointer-events-auto"
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(resume.contact.github, "_blank", "noopener,noreferrer");
+                }}
               >
                 GitHub
               </a>
             </>
           )}
         </div>
-      </header>
+      </div>
 
       {/* Divider */}
       <div className="h-px bg-slate-300 my-2 print:my-1.5" />
@@ -232,14 +232,14 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
       </section>
 
       {/* Projects & Technical Experience */}
-      <section style={{ marginBottom: `${sectionGap}px` }}>
+      <section style={{ marginBottom: `${sectionGap}px` }} className="break-inside-avoid print:break-inside-avoid">
         <h2 className="text-[1.05em] font-bold tracking-[0.1em] uppercase text-slate-900 border-b-2 border-slate-900 pb-0.5 mb-1.5 inline-block">
           Technical Experience & Projects
         </h2>
         <div className="flex flex-col" style={{ gap: `${projectGap}px` }}>
           {resume.projects.map((project, idx) => (
             <div key={idx} className="break-inside-avoid print:break-inside-avoid">
-              <div className="flex items-baseline justify-between gap-2 mb-0.5 flex-wrap">
+              <div className="flex items-start sm:items-baseline justify-between gap-2 mb-0.5">
                 <div className="flex-1 min-w-0 flex items-baseline gap-1.5 flex-wrap">
                   <h3
                     contentEditable={isEditable}
@@ -260,26 +260,44 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                   </span>
                 </div>
                 {(() => {
+                  const sanitizeUrl = (u?: string) => {
+                    if (!u) return "";
+                    if (u.includes("datapilot.duckdns.org")) return "https://datapilot-ebon-sigma.vercel.app";
+                    if (u.includes("cortex-ai.duckdns.org")) return "https://cortex-azure-six.vercel.app";
+                    if (u.includes("vaanibook.duckdns.org")) return "https://vaani-book.vercel.app";
+                    return u;
+                  };
+
+                  const demoUrl = sanitizeUrl(project.demoUrl);
+                  const videoUrl = sanitizeUrl(project.videoUrl);
+                  const docUrl = sanitizeUrl(project.docUrl);
+
                   const links = [
-                    project.demoUrl ? { label: "Live Demo", url: project.demoUrl } : null,
-                    project.videoUrl ? { label: "Video Explanation", url: project.videoUrl } : null,
-                    project.docUrl ? { label: "Documentation", url: project.docUrl } : null,
+                    demoUrl ? { label: "Live Demo", url: demoUrl } : null,
+                    videoUrl ? { label: "Project Walkthrough", url: videoUrl } : null,
+                    docUrl ? { label: "Documentation", url: docUrl } : null,
                   ].filter(Boolean) as { label: string; url: string }[];
 
                   if (links.length === 0) return null;
 
                   return (
-                    <div className="flex items-center gap-1.5 text-[0.88em] shrink-0 ml-2 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 text-[0.88em] shrink-0 ml-2 whitespace-nowrap relative z-20 pointer-events-auto">
                       {links.map((link, lIdx) => (
                         <React.Fragment key={link.label}>
                           {lIdx > 0 && <span className="text-slate-300 font-normal select-none">|</span>}
                           <a
                             href={link.url}
                             target="_blank"
-                            rel="noreferrer"
-                            className="text-indigo-600 hover:text-indigo-900 font-semibold no-underline transition-colors"
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(link.url, "_blank", "noopener,noreferrer");
+                            }}
+                            className="inline-flex items-center gap-0.5 text-indigo-600 hover:text-indigo-900 font-bold underline decoration-indigo-300 hover:decoration-indigo-600 transition-colors cursor-pointer relative z-20 pointer-events-auto"
+                            title={`Open ${link.label} (${link.url})`}
                           >
-                            {link.label}
+                            <span>{link.label}</span>
+                            <span className="text-[0.85em] font-normal leading-none select-none">↗</span>
                           </a>
                         </React.Fragment>
                       ))}

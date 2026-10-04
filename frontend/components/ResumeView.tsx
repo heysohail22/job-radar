@@ -10,6 +10,8 @@ import {
   FileCheck,
   Sliders,
   Maximize2,
+  Loader2,
+  Printer,
 } from "lucide-react";
 import { resumeData, type ResumeDataType } from "../lib/resumeData";
 import { ResumeDocument, type SpacingConfig } from "./ResumeDocument";
@@ -35,6 +37,7 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
   const [showJDMatcher, setShowJDMatcher] = useState<boolean>(true);
   const [showSpacingControls, setShowSpacingControls] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   // Spacing & Typography state for ATS 1-page tuning
   const [spacing, setSpacing] = useState<SpacingConfig>({
@@ -94,13 +97,14 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
     setTimeout(() => setSaveToast(null), 2500);
   };
 
-  // Clear any legacy localStorage keys
+  // Clear any legacy localStorage keys and synchronize with latest resumeData
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
         localStorage.removeItem("jobmatch_custom_resume");
       }
     } catch {}
+    setResume(resumeData);
   }, []);
 
   // Update resume in memory
@@ -158,8 +162,52 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
     handleUpdateResume(updated);
   };
 
+  // Download clean ATS 1-page PDF directly with clickable hyperlinks and zero browser margins
+  const handleDownloadPDF = async () => {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    if (typeof window !== "undefined" && window.getSelection) {
+      window.getSelection()?.removeAllRanges();
+    }
+
+    setIsDownloading(true);
+    setSaveToast("Generating 1-page ATS PDF with active hyperlinks...");
+
+    try {
+      const response = await fetch("/api/download-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume, spacing }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API responded with ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const cleanName = (resume.name || "Resume").replace(/\s+/g, "_");
+      a.download = `${cleanName}_Resume.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      setSaveToast("✓ Download complete! 1-Page PDF with clickable links ready.");
+    } catch (err) {
+      console.warn("Direct PDF generation fallback to native window.print():", err);
+      window.print();
+    } finally {
+      setIsDownloading(false);
+      setTimeout(() => setSaveToast(null), 3500);
+    }
+  };
+
   return (
-    <div className="w-full flex-1 min-h-0 h-full overflow-y-auto p-3.5 sm:p-6 space-y-5 text-left bg-[#080F18]">
+    <div className="w-full flex-1 min-h-0 h-full overflow-y-auto p-3.5 sm:p-6 space-y-5 text-left bg-[#080F18] print:p-0 print:m-0 print:space-y-0 print:bg-white print:overflow-visible print:h-auto print:block print-container">
       {/* Workspace Header Toolbar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-[#101828] border border-[#232B3B] shadow-xs print-hide">
         <div>
@@ -217,11 +265,33 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
           {/* Download PDF Button */}
           <button
             type="button"
-            onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] text-white text-xs font-bold shadow-md shadow-[#4F46E5]/25 transition-all cursor-pointer active:scale-95"
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] text-white text-xs font-bold shadow-md shadow-[#4F46E5]/25 transition-all cursor-pointer active:scale-95 disabled:opacity-60"
+            title="Download crisp 1-page ATS PDF directly with all working project links"
           >
-            <Download size={14} />
-            <span>Download PDF</span>
+            {isDownloading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            <span>{isDownloading ? "Generating PDF..." : "Download PDF"}</span>
+          </button>
+
+          {/* Print Dialog Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+                document.activeElement.blur();
+              }
+              window.print();
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-xs font-bold text-[#AAB4C5] hover:text-[#F8F8F8] transition-colors cursor-pointer"
+            title="Open browser print dialog"
+          >
+            <Printer size={14} />
+            <span>Print</span>
           </button>
 
           {/* Reset Button */}
@@ -434,14 +504,14 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
 
       {/* Save Notification Toast */}
       {saveToast && (
-        <div className="fixed bottom-5 left-5 z-50 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#10B981]/20 border border-[#10B981]/50 text-[#34D399] text-xs font-bold shadow-lg backdrop-blur-md animate-in fade-in">
+        <div className="fixed bottom-5 left-5 z-50 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#10B981]/20 border border-[#10B981]/50 text-[#34D399] text-xs font-bold shadow-lg backdrop-blur-md animate-in fade-in print-hide">
           <FileCheck size={14} />
           <span>{saveToast}</span>
         </div>
       )}
 
       {/* 1-Page A4 Paper Resume Document */}
-      <div className="flex justify-center w-full py-2">
+      <div className="flex justify-center w-full py-2 print:p-0 print:m-0 print:block">
         <ResumeDocument
           resume={resume}
           spacing={spacing}

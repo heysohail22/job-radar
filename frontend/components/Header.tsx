@@ -8,7 +8,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ isSidebarOpen, onToggleSidebar }) => {
   return (
-    <header className="h-14 border-b border-[#232B3B] bg-[#080F18] px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 z-20">
+    <header className="h-14 border-b border-[#232B3B] bg-[#080F18] px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0 z-20 print:hidden print-hide">
       {/* Left: Sidebar Toggle Button */}
       <div className="flex items-center gap-3">
         <button

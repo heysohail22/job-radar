@@ -29,6 +29,18 @@ export interface EducationInfo {
   cgpa: string;
 }
 
+export interface SpacingConfig {
+  fontSize: number;
+  lineHeight: number;
+  sectionGap: number;
+  projectGap: number;
+  summarySkillsGap?: number;
+  skillsProjectsGap?: number;
+  bulletGap?: number;
+  paddingX: number;
+  paddingY: number;
+}
+
 export interface ResumeDataType {
   name: string;
   title: string;
@@ -113,7 +125,7 @@ export const resumeData: ResumeDataType = {
     {
       name: "DataPilot",
       subtitle: "Autonomous Text-to-SQL & Business Data Intelligence Platform",
-      demoUrl: "https://datapilot.duckdns.org",
+      demoUrl: "https://datapilot-ebon-sigma.vercel.app",
       videoUrl: "https://lnkd.in/p/dgYMyS9t",
       tech: [
         "LangGraph StateGraph",
@@ -134,7 +146,7 @@ export const resumeData: ResumeDataType = {
     {
       name: "Cortex",
       subtitle: "Multi-Agent Corrective RAG (CRAG) & Evaluation Guardrails Platform",
-      demoUrl: "https://cortex-ai.duckdns.org",
+      demoUrl: "https://cortex-azure-six.vercel.app",
       tech: [
         "LangGraph",
         "Corrective RAG (CRAG)",
@@ -154,7 +166,7 @@ export const resumeData: ResumeDataType = {
     {
       name: "VaaniBook",
       subtitle: "Real-Time Multilingual Voice AI Agent for Autonomous Restaurant Reservations",
-      demoUrl: "https://vaanibook.duckdns.org",
+      demoUrl: "https://vaani-book.vercel.app",
       tech: [
         "Sarvam Voice Agent",
         "LangGraph",

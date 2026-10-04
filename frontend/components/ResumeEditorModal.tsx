@@ -87,7 +87,7 @@ export const ResumeEditorModal: React.FC<ResumeEditorModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-5 animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-3 sm:p-5 animate-in fade-in duration-150 print:hidden print-hide">
       <div className="w-full max-w-3xl rounded-2xl bg-[#101828] border border-[#232B3B] flex flex-col max-h-[90vh] shadow-2xl text-left overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#232B3B] bg-[#080F18]/80">
@@ -273,6 +273,34 @@ export const ResumeEditorModal: React.FC<ResumeEditorModalProps> = ({
                           updated[pIdx] = { ...updated[pIdx], subtitle: e.target.value };
                           setFormData({ ...formData, projects: updated });
                         }}
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#101828] border border-[#232B3B] text-[#F8F8F8] focus:outline-hidden focus:border-[#6366F1]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#AAB4C5] font-bold mb-1">Live Demo URL (optional)</label>
+                      <input
+                        type="text"
+                        value={proj.demoUrl || ""}
+                        onChange={(e) => {
+                          const updated = [...formData.projects];
+                          updated[pIdx] = { ...updated[pIdx], demoUrl: e.target.value.trim() || undefined };
+                          setFormData({ ...formData, projects: updated });
+                        }}
+                        placeholder="https://my-app.vercel.app"
+                        className="w-full px-3 py-1.5 rounded-lg bg-[#101828] border border-[#232B3B] text-[#F8F8F8] focus:outline-hidden focus:border-[#6366F1]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[#AAB4C5] font-bold mb-1">Demo Video URL (optional)</label>
+                      <input
+                        type="text"
+                        value={proj.videoUrl || ""}
+                        onChange={(e) => {
+                          const updated = [...formData.projects];
+                          updated[pIdx] = { ...updated[pIdx], videoUrl: e.target.value.trim() || undefined };
+                          setFormData({ ...formData, projects: updated });
+                        }}
+                        placeholder="https://linkedin.com/... or https://youtube.com/..."
                         className="w-full px-3 py-1.5 rounded-lg bg-[#101828] border border-[#232B3B] text-[#F8F8F8] focus:outline-hidden focus:border-[#6366F1]"
                       />
                     </div>

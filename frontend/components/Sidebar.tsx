@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* 1. Mobile Drawer Overlay (Slide-over drawer with backdrop) */}
       <div
         className={`
-          md:hidden fixed inset-0 z-50 transition-all duration-300
+          md:hidden fixed inset-0 z-50 transition-all duration-300 print:hidden print-hide
           ${isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}
         `}
       >
@@ -175,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* 2. Desktop Sleek Sidebar (Smoothly Expands or Collapses to Icon Dock) */}
       <aside
         className={`
-          hidden md:flex flex-col justify-between border-r border-[#1F293D] bg-[#0A101D] h-full shrink-0 z-30 transition-all duration-300 ease-in-out
+          hidden md:flex flex-col justify-between border-r border-[#1F293D] bg-[#0A101D] h-full shrink-0 z-30 transition-all duration-300 ease-in-out print:hidden print-hide
           ${isOpen ? "w-[245px] p-4" : "w-[68px] p-3 items-center"}
         `}
       >

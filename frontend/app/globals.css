@@ -55,39 +55,122 @@ html, body {
     margin: 0;
   }
 
+  /* Reset document and viewport to prevent clipping, dark edges, and background bleed */
   html,
   body {
-    background-color: white !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
     height: auto !important;
-  }
-
-  * {
+    min-height: 100% !important;
+    overflow: visible !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  header, nav, aside, .print-hide {
-    display: none !important;
+  /* 1. Eliminate Chromium Skia print rasterizer blur bug caused by backdrop-filters */
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    filter: none !important;
   }
 
+  /* 2. Completely hide all app navigation, headers, fixed overlays, and backdrop-blur elements */
+  header,
+  nav,
+  aside,
+  [class*="fixed"],
+  [class*="backdrop-blur"],
+  .fixed,
+  .print-hide,
+  [data-print-hide="true"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+  }
+
+  /* Reset all ancestor wrappers so they don't clip, offset, or constrain the printable canvas */
+  html body,
+  html body > div,
+  html body main,
+  html body main > div,
+  .print-container {
+    background: transparent !important;
+    background-color: transparent !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    transform: none !important;
+    display: block !important;
+  }
+
+  /* Never append URL text after links in print */
+  a[href]:after {
+    content: "" !important;
+  }
+
+  a, a:visited {
+    text-decoration: none !important;
+  }
+
+  /* Exact A4 dimensions and styling for the resume sheet */
   #resume-page {
+    box-sizing: border-box !important;
+    width: 210mm !important;
+    max-width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 auto !important;
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #0f172a !important;
     box-shadow: none !important;
     border: none !important;
-    margin: 0 auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    border-radius: 0 !important;
     transform: none !important;
     transform-origin: initial !important;
+    overflow: visible !important;
+    padding: var(--resume-padding, 28px 36px) !important;
     font-size: var(--resume-font-size, 12px) !important;
     line-height: var(--resume-line-height, 1.45) !important;
-    padding: var(--resume-padding, 28px 36px) !important;
-    border-radius: 0 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
-  #resume-page section {
-    margin-bottom: var(--resume-section-gap, 8px) !important;
+  #resume-page * {
+    box-sizing: border-box !important;
+    text-shadow: none !important;
+    filter: none !important;
+  }
+
+  /* Clear any editable outlines or focus highlights */
+  #resume-page [contenteditable] {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Prevent sections or project items from breaking awkwardly */
+  #resume-page header,
+  #resume-page section,
+  #resume-page .break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }
 

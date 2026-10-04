@@ -54,10 +54,16 @@ export default function Home() {
     } catch {}
   }, []);
 
-  // Set sidebar open by default only on desktop
+  // Set sidebar open by default only on desktop, and check for tab parameter
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 768) {
-      setIsSidebarOpen(true);
+    if (typeof window !== "undefined") {
+      if (window.innerWidth >= 768) {
+        setIsSidebarOpen(true);
+      }
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("tab") === "resume" || window.location.hash === "#resume") {
+        setActiveTab("resume");
+      }
     }
   }, []);
 
@@ -461,7 +467,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased relative">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-[#080F18] text-[#F8F8F8] font-sans antialiased relative print:h-auto print:overflow-visible print:bg-white print:text-black print:block">
       {/* 1. Left Collapsible Sidebar with close button */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -483,7 +489,7 @@ export default function Home() {
       />
 
       {/* 2. Main Content Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 print:h-auto print:overflow-visible print:block">
         {/* Top Header with Sidebar Toggle Button */}
         <Header
           isSidebarOpen={isSidebarOpen}
@@ -491,9 +497,9 @@ export default function Home() {
         />
 
         {/* Dynamic Body Pane */}
-        <main className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative">
+        <main className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden relative print:h-auto print:overflow-visible print:block">
           {activeTab === "resume" ? (
-            <div className="w-full flex-1 min-h-0 h-full overflow-hidden flex">
+            <div className="w-full flex-1 min-h-0 h-full overflow-hidden flex print:h-auto print:overflow-visible print:block">
               <ResumeView
                 onGoToJobFinder={() => {
                   setActiveTab("jobs");
@@ -568,7 +574,7 @@ export default function Home() {
         </main>
 
         {/* 3. Mobile Bottom Navigation Bar */}
-        <nav className="md:hidden h-14 border-t border-[#232B3B] bg-[#080820]/95 backdrop-blur-md flex items-center justify-around px-4 shrink-0 z-20">
+        <nav className="md:hidden h-14 border-t border-[#232B3B] bg-[#080820]/95 backdrop-blur-md flex items-center justify-around px-4 shrink-0 z-20 print:hidden print-hide">
           <button
             type="button"
             onClick={() => {
@@ -605,7 +611,7 @@ export default function Home() {
       {/* Toast / Notification Banner */}
       {statusFeedback && (
         <div
-          className={`fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 ${
+          className={`fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold shadow-xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-3 duration-200 print:hidden print-hide ${
             statusFeedback.type === "success"
               ? "bg-[#10B981]/20 border-[#10B981]/50 text-[#34D399]"
               : statusFeedback.type === "error"
@@ -628,7 +634,7 @@ export default function Home() {
 
       {/* Firecrawl Scraper Modal */}
       {isFirecrawlOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200 print:hidden print-hide">
           <div className="w-full max-w-md rounded-2xl bg-[#101828] border border-[#232B3B] p-5 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl text-left max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -696,7 +702,7 @@ export default function Home() {
 
       {/* Google Jobs Discovery Modal */}
       {isGoogleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-200 print:hidden print-hide">
           <div className="w-full max-w-lg rounded-2xl bg-[#101828] border border-[#232B3B] p-5 sm:p-6 space-y-4 sm:space-y-5 shadow-2xl text-left max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
