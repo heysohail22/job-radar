@@ -381,7 +381,7 @@ export function generateResumeHtml(
                   ${links
                     .map(
                       (link, lIdx) =>
-                        `${lIdx > 0 ? '<span class="dot">|</span>' : ""}<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="project-link-item"><span>${escapeHtml(link.label)}</span><span style="font-size:0.85em; font-weight:normal;">↗</span></a>`
+                        `${lIdx > 0 ? '<span class="dot">|</span>' : ""}<a href="${link.url}" target="_blank" rel="noopener noreferrer" class="project-link-item"><span>${escapeHtml(link.label)}</span></a>`
                     )
                     .join("")}
                 </div>`

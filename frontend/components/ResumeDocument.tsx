@@ -148,13 +148,9 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
               <span className="text-slate-300 select-none">•</span>
               <a
                 href={resume.contact.linkedin}
-                className="text-slate-900 hover:text-black transition-colors no-underline cursor-pointer relative z-20 pointer-events-auto"
+                className="text-slate-900 hover:text-black transition-colors no-underline"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(resume.contact.linkedin, "_blank", "noopener,noreferrer");
-                }}
               >
                 LinkedIn
               </a>
@@ -165,13 +161,9 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
               <span className="text-slate-300 select-none">•</span>
               <a
                 href={resume.contact.github}
-                className="text-slate-900 hover:text-black transition-colors no-underline cursor-pointer relative z-20 pointer-events-auto"
+                className="text-slate-900 hover:text-black transition-colors no-underline"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(resume.contact.github, "_blank", "noopener,noreferrer");
-                }}
               >
                 GitHub
               </a>
@@ -281,7 +273,7 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                   if (links.length === 0) return null;
 
                   return (
-                    <div className="flex items-center gap-1.5 text-[0.88em] shrink-0 ml-2 whitespace-nowrap relative z-20 pointer-events-auto">
+                    <div className="flex items-center gap-1.5 text-[0.88em] shrink-0 ml-2 whitespace-nowrap">
                       {links.map((link, lIdx) => (
                         <React.Fragment key={link.label}>
                           {lIdx > 0 && <span className="text-slate-300 font-normal select-none">|</span>}
@@ -289,15 +281,10 @@ export const ResumeDocument: React.FC<ResumeDocumentProps> = ({
                             href={link.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(link.url, "_blank", "noopener,noreferrer");
-                            }}
-                            className="inline-flex items-center gap-0.5 text-slate-900 hover:text-black font-bold no-underline transition-colors cursor-pointer relative z-20 pointer-events-auto"
+                            className="inline-flex items-center text-slate-900 hover:text-black font-bold no-underline transition-colors"
                             title={`Open ${link.label} (${link.url})`}
                           >
                             <span>{link.label}</span>
-                            <span className="text-[0.85em] font-normal leading-none select-none">↗</span>
                           </a>
                         </React.Fragment>
                       ))}
