@@ -12,11 +12,13 @@ import {
   Maximize2,
   Loader2,
   Printer,
+  FileText,
 } from "lucide-react";
 import { resumeData, type ResumeDataType } from "../lib/resumeData";
 import { ResumeDocument, type SpacingConfig } from "./ResumeDocument";
 import { JDKeywordMatcher } from "./JDKeywordMatcher";
 import { ResumeEditorModal } from "./ResumeEditorModal";
+import { generateResumeDocxBlob } from "../lib/generateResumeDocx";
 import type { JobPostingItem } from "../lib/types";
 
 interface ResumeViewProps {
@@ -38,6 +40,7 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
   const [showSpacingControls, setShowSpacingControls] = useState<boolean>(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  const [isDownloadingDocx, setIsDownloadingDocx] = useState<boolean>(false);
 
   // Spacing & Typography state for ATS 1-page tuning
   const [spacing, setSpacing] = useState<SpacingConfig>({
@@ -162,6 +165,65 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
     handleUpdateResume(updated);
   };
 
+  // Download clean ATS Word (.docx) document with clickable hyperlinks
+  const handleDownloadDOCX = async () => {
+    if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    if (typeof window !== "undefined" && window.getSelection) {
+      window.getSelection()?.removeAllRanges();
+    }
+
+    setIsDownloadingDocx(true);
+    setSaveToast("Generating ATS-compliant Word (.docx) resume...");
+
+    try {
+      const blob = await generateResumeDocxBlob(resume, spacing);
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = downloadUrl;
+      const cleanName = (resume.name || "Resume").replace(/\s+/g, "_");
+      a.download = `${cleanName}_Resume.docx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+
+      setSaveToast("✓ Download complete! Word (.docx) resume ready.");
+    } catch (err) {
+      console.error("Client DOCX generation failed, falling back to server route:", err);
+      try {
+        const response = await fetch("/api/download-resume?format=docx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resume, spacing, format: "docx" }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API responded with ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = downloadUrl;
+        const cleanName = (resume.name || "Resume").replace(/\s+/g, "_");
+        a.download = `${cleanName}_Resume.docx`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+
+        setSaveToast("✓ Download complete! Word (.docx) resume ready.");
+      } catch (fallbackErr) {
+        setSaveToast("❌ Failed to generate DOCX file.");
+      }
+    } finally {
+      setIsDownloadingDocx(false);
+      setTimeout(() => setSaveToast(null), 3500);
+    }
+  };
+
   // Download clean ATS 1-page PDF directly with clickable hyperlinks and zero browser margins
   const handleDownloadPDF = async () => {
     if (typeof document !== "undefined" && document.activeElement instanceof HTMLElement) {
@@ -175,10 +237,10 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
     setSaveToast("Generating 1-page ATS PDF with active hyperlinks...");
 
     try {
-      const response = await fetch("/api/download-resume", {
+      const response = await fetch("/api/download-resume?format=pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, spacing }),
+        body: JSON.stringify({ resume, spacing, format: "pdf" }),
       });
 
       if (!response.ok) {
@@ -262,20 +324,36 @@ export const ResumeView: React.FC<ResumeViewProps> = ({
             <span>Edit Form</span>
           </button>
 
-          {/* Download PDF Button */}
+          {/* Download Word (.docx) Button - Primary Action */}
+          <button
+            type="button"
+            onClick={handleDownloadDOCX}
+            disabled={isDownloadingDocx}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#2563EB] to-[#4F46E5] hover:from-[#3B82F6] hover:to-[#6366F1] text-white text-xs font-bold shadow-md shadow-[#2563EB]/25 transition-all cursor-pointer active:scale-95 disabled:opacity-60"
+            title="Download editable ATS-compliant Word document (.docx)"
+          >
+            {isDownloadingDocx ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <FileText size={14} />
+            )}
+            <span>{isDownloadingDocx ? "Generating DOCX..." : "Download Word (.docx)"}</span>
+          </button>
+
+          {/* Download PDF Button - Secondary Option */}
           <button
             type="button"
             onClick={handleDownloadPDF}
             disabled={isDownloading}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] hover:from-[#6366F1] hover:to-[#8B5CF6] text-white text-xs font-bold shadow-md shadow-[#4F46E5]/25 transition-all cursor-pointer active:scale-95 disabled:opacity-60"
-            title="Download crisp 1-page ATS PDF directly with all working project links"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#181F30] hover:bg-[#232B3B] border border-[#232B3B] text-xs font-bold text-[#AAB4C5] hover:text-[#F8F8F8] transition-colors cursor-pointer active:scale-95 disabled:opacity-60"
+            title="Download 1-page ATS PDF"
           >
             {isDownloading ? (
               <Loader2 size={14} className="animate-spin" />
             ) : (
               <Download size={14} />
             )}
-            <span>{isDownloading ? "Generating PDF..." : "Download PDF"}</span>
+            <span>{isDownloading ? "PDF..." : "PDF"}</span>
           </button>
 
           {/* Print Dialog Button */}

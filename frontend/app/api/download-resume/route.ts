@@ -5,21 +5,58 @@ import fs from "fs";
 import path from "path";
 import { resumeData } from "../../../lib/resumeData";
 import { generateResumeHtml } from "../../../lib/generateResumeHtml";
+import { generateResumeDocxBuffer } from "../../../lib/generateResumeDocx";
 
 const execFileAsync = promisify(execFile);
 
-async function handleGeneratePdf(request: Request) {
+async function handleGenerateResume(request: Request) {
   let targetResume = resumeData;
   let targetSpacing = undefined;
+  let format = "docx"; // Default to docx
+
+  const url = new URL(request.url);
+  const queryFormat = url.searchParams.get("format");
+  if (queryFormat) {
+    format = queryFormat.toLowerCase();
+  }
 
   if (request.method === "POST") {
     try {
       const body = await request.json();
       if (body.resume) targetResume = body.resume;
       if (body.spacing) targetSpacing = body.spacing;
+      if (body.format) format = body.format.toLowerCase();
     } catch {}
   }
 
+  const cleanBaseName = (targetResume.name || "Resume").replace(/\s+/g, "_");
+
+  // Handle DOCX format
+  if (format === "docx" || format === "word") {
+    try {
+      const buffer = await generateResumeDocxBuffer(targetResume, targetSpacing);
+      const filename = `${cleanBaseName}_Resume.docx`;
+
+      return new Response(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "Content-Disposition": `attachment; filename="${filename}"`,
+          "Content-Length": buffer.length.toString(),
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+        },
+      });
+    } catch (error: any) {
+      console.error("DOCX generation error:", error);
+      return NextResponse.json(
+        { error: "DOCX generation failed", details: error?.message },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Handle PDF format
   const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const htmlPath = path.join("/tmp", `resume_${id}.html`);
   const pdfPath = path.join("/tmp", `resume_${id}.pdf`);
@@ -50,7 +87,7 @@ async function handleGeneratePdf(request: Request) {
       if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
     } catch {}
 
-    const cleanFilename = `${targetResume.name.replace(/\s+/g, "_")}_Resume.pdf`;
+    const cleanFilename = `${cleanBaseName}_Resume.pdf`;
 
     return new Response(fileBuffer, {
       status: 200,
@@ -76,9 +113,9 @@ async function handleGeneratePdf(request: Request) {
 }
 
 export async function GET(request: Request) {
-  return handleGeneratePdf(request);
+  return handleGenerateResume(request);
 }
 
 export async function POST(request: Request) {
-  return handleGeneratePdf(request);
+  return handleGenerateResume(request);
 }
