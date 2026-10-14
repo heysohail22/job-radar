@@ -4,7 +4,7 @@ Native React Native app using Expo SDK 57, alongside the existing Next.js websit
 
 ## Run locally
 
-From the repository root:
+The website server code is in `website/`. Its credentials belong in `website/.env.local`; mobile contains no Supabase secrets. From the repository root:
 
 ```sh
 pnpm install

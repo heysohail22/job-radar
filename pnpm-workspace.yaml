@@ -1,5 +1,6 @@
 packages:
   - mobile
+  - website
 allowBuilds:
   unrs-resolver: true
 minimumReleaseAgeExclude:

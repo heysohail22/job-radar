@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiOrigin, fetchFeed, mutateJob } from "../mobile/src/api";
-import { resolveTheme } from "../mobile/src/theme";
+import { apiOrigin, fetchFeed, mutateJob } from "../../mobile/src/api";
+import { resolveTheme } from "../../mobile/src/theme";
 import type { Job } from "../lib/types";
 
 afterEach(() => vi.unstubAllGlobals());

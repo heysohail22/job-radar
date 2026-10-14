@@ -23,13 +23,13 @@ Do not add Auth, login, registration, user onboarding, a crawler, resume editing
 
 ## Architecture
 
-The root application uses Next.js App Router, React, TypeScript, Tailwind CSS, locally packaged Inter fonts, and pnpm. Supabase access is confined to `lib/server/` and Next.js route handlers. The mobile app calls the loopback API using USB port reversal on Android or an iOS simulator; it never bundles Supabase credentials. No LAN/internet access to privileged endpoints is added. Theme preference alone may be stored in mobile AsyncStorage. There is no FastAPI or SQLite service. Linting uses the supported ESLint 9 / TypeScript 5.9 combination; dependencies are pinned in package.json and pnpm-lock.yaml.
+The website in `website/` uses Next.js App Router, React, TypeScript, Tailwind CSS, locally packaged Inter fonts, and pnpm. Supabase access is confined to `website/lib/server/` and Next.js route handlers. The mobile app calls the loopback API using USB port reversal on Android or an iOS simulator; it never bundles Supabase credentials. No LAN/internet access to privileged endpoints is added. Theme preference alone may be stored in mobile AsyncStorage. There is no FastAPI or SQLite service. Website linting uses the supported ESLint 9 / TypeScript 5.9 combination; mobile type checking uses Expo SDK 57’s recommended TypeScript 6.0.3; dependencies are pinned in package.json and pnpm-lock.yaml.
 
 Dev and production builds explicitly use Webpack because Turbopack's PostCSS worker needs a port disallowed by this environment. `experimental.useTypeScriptCli: false` uses Next.js's supported TypeScript compiler-API integration; type checking is enabled, not skipped.
 
-Website-owned state is stored in `public.job_workspace_state`, keyed by the exact matching-record ID. This is a deliberate refinement of the spec's proposed bookmark column: external collector upsert code is not available here, so isolation preserves both bookmarks and application stages without changing collector-owned rows. `database/workspace.sql` records the idempotent schema, server-only read RPC, and atomic revision-checked mutation RPC applied to the existing project. RLS is enabled and anonymous/authenticated RPC execution is revoked.
+Website-owned state is stored in `public.job_workspace_state`, keyed by the exact matching-record ID. This is a deliberate refinement of the spec's proposed bookmark column: external collector upsert code is not available here, so isolation preserves both bookmarks and application stages without changing collector-owned rows. `website/database/workspace.sql` records the idempotent schema, server-only read RPC, and atomic revision-checked mutation RPC applied to the existing project. RLS is enabled and anonymous/authenticated RPC execution is revoked.
 
-`components/website.tsx` contains the interactive views. Pages delegate initial queries to `components/website-page.tsx`. Filters/sort/pagination live in the URL. The server RPC filters and sorts before pagination. UI mutation success refreshes server data; stale revisions return a conflict rather than overwriting another tab.
+`website/components/website.tsx` contains the interactive views. Pages delegate initial queries to `website/components/website-page.tsx`. Filters/sort/pagination live in the URL. The server RPC filters and sorts before pagination. UI mutation success refreshes server data; stale revisions return a conflict rather than overwriting another tab.
 
 Verify supported package versions against current official documentation when implementing. Pin dependencies and keep a pnpm lockfile. Do not assume versions from the deleted application are requirements.
 
@@ -75,4 +75,8 @@ pnpm test       focused behavioral tests
 pnpm build      local production build validation
 ```
 
-Use `pnpm format` to format source. `pnpm check:db` performs read-only Supabase connection checks using ignored `.env.local`. Browser verification requires permission to start the local server; never claim it has been performed when only tests/build passed.
+Use `pnpm format` to format source. `pnpm check:db` performs read-only Supabase connection checks using ignored `website/.env.local`. Browser verification requires permission to start the local server; never claim it has been performed when only tests/build passed.
+
+Mobile commands: `pnpm --dir mobile start`, `pnpm --dir mobile typecheck`, and `pnpm --dir mobile export`. Export verifies JavaScript/assets for Android and iOS and does not publish or start the website server.
+
+The owner requested the website be grouped into `website/`. Root package scripts forward website operations; workspace lint covers both applications. Website code, config, assets, SQL, tests and server environment files live under `website/`. Root `AGENTS.md`, `.codex/`, README, ESLint workspace configuration, package manifest and pnpm lock/workspace files remain repository-level. Mobile currently imports only pure types/URL validation from `website/lib/`; never import its server modules into mobile.

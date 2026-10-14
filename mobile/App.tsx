@@ -18,17 +18,15 @@ import {
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
+import { useFonts } from "expo-font";
+import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
+import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
+import { Inter_700Bold } from "@expo-google-fonts/inter/700Bold";
 import { SvgXml } from "react-native-svg";
 import { Asset } from "expo-asset";
 import { File } from "expo-file-system";
-import type { Feed, Filters, Job, JobStatus, View as Page } from "../lib/types";
-import { safeApplicationUrl } from "../lib/validation";
+import type { Feed, Filters, Job, JobStatus, View as Page } from "../website/lib/types";
+import { safeApplicationUrl } from "../website/lib/validation";
 import { ApiError, fetchFeed, fetchJob, mutateJob } from "./src/api";
 import {
   palettes,
@@ -135,10 +133,11 @@ function AppContent() {
     }
   }, [page, filters]);
   useEffect(() => {
+    const requests = generation;
     setFeed(undefined);
     void load();
     return () => {
-      generation.current++;
+      requests.current++;
     };
   }, [load]);
   useEffect(() => {
@@ -147,7 +146,11 @@ function AppContent() {
         void load();
         if (detail)
           fetchJob(detail.id)
-            .then(setDetail)
+            .then((fresh) =>
+              setDetail((current) =>
+                current?.id === fresh.id ? fresh : current,
+              ),
+            )
             .catch(() => {});
       }
     });
@@ -188,7 +191,10 @@ function AppContent() {
     setNotice("");
     try {
       await mutateJob(job, change);
-      if (detail?.id === job.id) setDetail(await fetchJob(job.id));
+      if (detail?.id === job.id) {
+        const fresh = await fetchJob(job.id);
+        setDetail((current) => (current?.id === fresh.id ? fresh : current));
+      }
       await load();
       setNotice("Saved to your workspace.");
     } catch (e) {
@@ -199,7 +205,12 @@ function AppContent() {
         await load();
         if (detail) {
           try {
-            setDetail(await fetchJob(detail.id));
+            {
+              const fresh = await fetchJob(detail.id);
+              setDetail((current) =>
+                current?.id === fresh.id ? fresh : current,
+              );
+            }
           } catch {
             setNotice("Refresh this job before making another change.");
           }
@@ -662,7 +673,9 @@ function AppContent() {
                 page === item && { backgroundColor: colors.soft },
               ]}
             >
-              <Art name={item} />
+              <View style={s.navIcon}>
+                <Art name={item} />
+              </View>
               <Text
                 style={[s.small, page === item && { color: colors.accent }]}
               >
@@ -991,6 +1004,7 @@ function styles(c: Palette) {
       borderTopWidth: 1,
       borderColor: c.border,
     },
+    navIcon: { backgroundColor: "#E7F2E9", padding: 5, borderRadius: 9 },
     navItem: {
       flex: 1,
       minHeight: 56,

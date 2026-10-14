@@ -1,12 +1,18 @@
 // @vitest-environment node
 import { beforeEach, describe, it, expect, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ update: vi.fn(), feed: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  update: vi.fn(),
+  feed: vi.fn(),
+  job: vi.fn(),
+}));
 vi.mock("@/lib/server/queries", () => ({
   updateMatch: mocks.update,
   getFeed: mocks.feed,
+  getJob: mocks.job,
 }));
 import { PATCH } from "@/app/api/matches/[matchId]/route";
 import { GET } from "@/app/api/jobs/route";
+import { GET as GET_JOB } from "@/app/api/jobs/[jobId]/route";
 import { AppError } from "@/lib/validation";
 const id = "11111111-1111-4111-8111-111111111111";
 const context = { params: Promise.resolve({ matchId: id }) };
@@ -19,6 +25,38 @@ function request(body: unknown, origin = "http://localhost:3000") {
 }
 beforeEach(() => vi.clearAllMocks());
 describe("website API", () => {
+  it("keeps mobile detail reads local and validates identifiers", async () => {
+    const context = { params: Promise.resolve({ jobId: id }) };
+    expect(
+      (await GET_JOB(new Request(`http://example.com/api/jobs/${id}`), context))
+        .status,
+    ).toBe(403);
+    expect(
+      (
+        await GET_JOB(new Request("http://localhost:3000/api/jobs/bad"), {
+          params: Promise.resolve({ jobId: "bad" }),
+        })
+      ).status,
+    ).toBe(400);
+    expect(mocks.job).not.toHaveBeenCalled();
+    mocks.job.mockResolvedValue(null);
+    expect(
+      (
+        await GET_JOB(
+          new Request(`http://localhost:3000/api/jobs/${id}`),
+          context,
+        )
+      ).status,
+    ).toBe(404);
+    mocks.job.mockResolvedValue({ id, title: "Engineer" });
+    const response = await GET_JOB(
+      new Request(`http://localhost:3000/api/jobs/${id}`),
+      context,
+    );
+    expect(response.status).toBe(200);
+    expect((await response.json()).id).toBe(id);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
   it("does not call Supabase for cross-origin writes or forbidden columns", async () => {
     expect(
       (

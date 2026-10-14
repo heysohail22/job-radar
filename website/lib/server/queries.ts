@@ -26,7 +26,7 @@ export async function getFeed(
   if (error)
     throw new AppError(
       error.code === "PGRST202"
-        ? "The website database setup is missing. Run database/workspace.sql in the intended Supabase project."
+        ? "The website database setup is missing. Run website/database/workspace.sql in the intended Supabase project."
         : "Your jobs could not be loaded. Please try again.",
       error.code === "PGRST202" ? 503 : 502,
     );

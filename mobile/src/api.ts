@@ -1,4 +1,4 @@
-import type { Feed, Filters, Job, Mutation, View } from "../../lib/types";
+import type { Feed, Filters, Job, Mutation, View } from "../../website/lib/types";
 
 export class ApiError extends Error {
   constructor(
