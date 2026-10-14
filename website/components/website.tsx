@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useAppearance } from "@/lib/appearance";
+import { SidebarToggle, ThemeControl } from "./appearance-controls";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { Icon, RadarArt, EmptyArt, type IconName } from "./ui/icon";
@@ -580,6 +582,8 @@ export function Website({
   filters: Filters;
   returnTo?: string;
 }) {
+  const { preference, collapsed, setPreference, toggleSidebar } =
+    useAppearance();
   const router = useRouter(),
     pathname = usePathname(),
     searchParams = useSearchParams();
@@ -704,8 +708,12 @@ export function Website({
   return (
     <div className={`jr-prototype${detail ? " has-detail" : ""}`}>
       <div className="jr-viewport">
-        <div className="jr-layout">
-          <aside className="jr-sidebar">
+        <div className={`jr-layout${collapsed ? " jr-sidebar-collapsed" : ""}`}>
+          <aside
+            className="jr-sidebar"
+            id="workspace-sidebar"
+            inert={collapsed}
+          >
             <Link href="/" className="brand-link" aria-label="JobRadar home">
               <Brand />
             </Link>
@@ -755,17 +763,21 @@ export function Website({
             aria-busy={navigationPending}
           >
             <header className="jr-topbar">
-              <div className="jr-desktop-crumb">
-                Workspace<span>/</span>
-                <b>{viewLabels[view]}</b>
-              </div>
-              <div className="jr-mobile-brand">
-                <Link className="brand-link" href="/">
-                  <Brand />
-                </Link>
+              <div className="jr-header-leading">
+                <SidebarToggle collapsed={collapsed} onToggle={toggleSidebar} />
+                <div className="jr-desktop-crumb">
+                  Workspace<span>/</span>
+                  <b>{viewLabels[view]}</b>
+                </div>
+                <div className="jr-mobile-brand">
+                  <Link className="brand-link" href="/">
+                    <Brand />
+                  </Link>
+                </div>
               </div>
               <div className="jr-top-actions">
-                <span>
+                <ThemeControl value={preference} onChange={setPreference} />
+                <span className="jr-last-seen">
                   <Icon name="check" />
                   {summary
                     ? `Last seen ${displayDate(summary.last_seen)}`

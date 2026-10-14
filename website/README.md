@@ -52,3 +52,7 @@ Auth, resume editing/tailoring, crawling, source publishing, and hosting are out
 ## Native mobile app
 
 The Expo / React Native app lives in the sibling `mobile/` folder with Discover, Saved, Activity, job details and system/light/dark appearance. See [mobile setup](../mobile/README.md) for USB/simulator instructions. Both clients use the same server-only Supabase workspace.
+
+## Website appearance
+
+Use the sidebar button in the desktop header to close or reopen navigation. Choose System, Light or Dark from the Appearance selector in the header (also available on phone browsers). Only these interface preferences are saved in browser localStorage; job data and progress remain in Supabase.

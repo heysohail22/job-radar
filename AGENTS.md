@@ -80,3 +80,5 @@ Use `pnpm format` to format source. `pnpm check:db` performs read-only Supabase 
 Mobile commands: `pnpm --dir mobile start`, `pnpm --dir mobile typecheck`, and `pnpm --dir mobile export`. Export verifies JavaScript/assets for Android and iOS and does not publish or start the website server.
 
 The owner requested the website be grouped into `website/`. Root package scripts forward website operations; workspace lint covers both applications. Website code, config, assets, SQL, tests and server environment files live under `website/`. Root `AGENTS.md`, `.codex/`, README, ESLint workspace configuration, package manifest and pnpm lock/workspace files remain repository-level. Mobile currently imports only pure types/URL validation from `website/lib/`; never import its server modules into mobile.
+
+Website appearance and sidebar preferences may be stored in localStorage (`jobradar-theme` and `jobradar-sidebar`); authoritative jobs, bookmarks and application progress must still remain in Supabase. The website provides system/light/dark appearance and a desktop sidebar collapse/reopen control.

@@ -1,7 +1,18 @@
 /* Adapt the approved MagicPath/Figma visual language to real website routes. */
 :root {
+  --bg: #f4f6f3;
+  --ink: #182a23;
+  --muted: #617169;
+  --accent: #146c4e;
+  --soft: #e7f2e9;
+  --border: #dfe6df;
+  --dark: #142d24;
+  --lime: #c6f16e;
+  --surface: #ffffff;
+  --action-ink: #ffffff;
+  --action-hover: #104a37;
   color-scheme: light;
-  background: #f4f6f3;
+  background: var(--bg);
   font-family: "Inter Variable", Inter, system-ui, sans-serif;
   font-synthesis: none;
 }
@@ -459,7 +470,7 @@ select:disabled {
 .text-field {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: white;
+  background: var(--surface);
   padding: 12px;
   font-size: 13px;
   min-height: 44px;
@@ -476,7 +487,7 @@ select:disabled {
   padding: 36px;
   border: 1px solid var(--border);
   border-radius: 24px;
-  background: white;
+  background: var(--surface);
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
@@ -495,18 +506,17 @@ select:disabled {
   padding: 32px;
   display: grid;
   gap: 24px;
-  color: #182a23;
+  color: var(--ink);
 }
 .standalone-state h1 {
   font-size: 32px;
   line-height: 1.3;
 }
 .standalone-state p {
-  color: #617169;
+  color: var(--muted);
 }
 .standalone-state .jr-btn {
   justify-self: start;
-  --accent: #146c4e;
   background: var(--accent);
   color: white;
   text-decoration: none;
@@ -516,9 +526,9 @@ select:disabled {
   top: -100px;
   left: 20px;
   padding: 12px 18px;
-  background: white;
-  color: #146c4e;
-  border: 2px solid #146c4e;
+  background: var(--surface);
+  color: var(--accent);
+  border: 2px solid var(--accent);
   border-radius: 12px;
   z-index: 100;
 }
@@ -868,7 +878,7 @@ select:disabled {
     display: block;
   }
   .job-action-panel {
-    background: white;
+    background: var(--surface);
     padding: 20px;
     border-radius: 20px;
     gap: 16px;
@@ -942,7 +952,7 @@ select:disabled {
     left: 0;
     right: 0;
     height: 96px;
-    background: white;
+    background: var(--surface);
     border-top: 1px solid var(--border);
     z-index: 19;
   }
@@ -952,5 +962,128 @@ select:disabled {
     left: 20px;
     right: 20px;
     z-index: 20;
+  }
+}
+
+/* Appearance preferences apply to every route, including loading/error states. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1713;
+  --surface: #16251e;
+  --ink: #f0f6ef;
+  --muted: #acbdb1;
+  --accent: #9ee2b6;
+  --soft: #213e2e;
+  --border: #30483b;
+  --dark: #1d382b;
+  --action-ink: #102319;
+  --action-hover: #b7efca;
+}
+body {
+  color: var(--ink);
+}
+.jr-header-leading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.jr-sidebar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px;
+  background: var(--surface) !important;
+  color: var(--ink);
+}
+.jr-sidebar-toggle:hover {
+  background: var(--soft) !important;
+}
+.jr-theme-control {
+  display: block;
+}
+.jr-theme-control select {
+  min-width: 92px;
+  min-height: 44px;
+}
+.jr-layout.jr-sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+.jr-sidebar-collapsed .jr-sidebar {
+  display: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.jr-top-actions .jr-last-seen {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+:root[data-theme="dark"] .jr-warning {
+  background: #3b3020;
+  color: #f2cd8c;
+}
+:root[data-theme="dark"] .loading-skeleton {
+  background: linear-gradient(90deg, #16251e 20%, #30483b 50%, #16251e 80%);
+  background-size: 200% 100%;
+}
+:root[data-theme="dark"] .jr-detail-tabs button.active,
+:root[data-theme="dark"] .jr-stage-tabs button.active,
+:root[data-theme="dark"] .jr-mobile-filters button.active {
+  background: var(--accent);
+  color: var(--action-ink);
+  border-color: var(--accent);
+}
+:root[data-theme="dark"] .standalone-state .jr-btn {
+  color: var(--action-ink);
+}
+/* Preserve the original artwork; lighten only small monochrome UI icons. */
+:root[data-theme="dark"] .jr-sidebar nav img,
+:root[data-theme="dark"] .jr-bottom-nav img,
+:root[data-theme="dark"] .jr-icon-button img,
+:root[data-theme="dark"] .jr-search img,
+:root[data-theme="dark"] .jr-filters img,
+:root[data-theme="dark"] .jr-job-meta img,
+:root[data-theme="dark"] .jr-stat-tile img,
+:root[data-theme="dark"] .jr-back img {
+  filter: brightness(0) saturate(100%) invert(87%) sepia(12%) saturate(563%)
+    hue-rotate(82deg);
+}
+@container (max-width: 779px) {
+  .jr-sidebar-toggle {
+    display: none;
+  }
+  .jr-header-leading {
+    gap: 0;
+  }
+  .jr-top-actions {
+    gap: 8px;
+  }
+  .jr-top-actions .jr-last-seen {
+    display: none;
+  }
+  .jr-theme-control select {
+    min-width: 80px;
+    padding: 8px;
+  }
+}
+@container (max-width: 779px) {
+  .jr-top-actions .jr-mobile-avatar {
+    display: none;
   }
 }

@@ -1,0 +1,2 @@
+// Static, trusted initialization: apply appearance before the first paint.
+export const appearanceScript = `(function(){try{var p=localStorage.getItem('jobradar-theme');document.documentElement.dataset.theme=(p==='dark'||p==='light')?p:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');}catch(e){document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}})();`;

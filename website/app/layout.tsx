@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { appearanceScript } from "@/lib/appearance-script";
 import "@fontsource-variable/inter";
 import "./globals.css";
 import "./website.css";
@@ -14,7 +15,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: appearanceScript }} />
+      </head>
       <body>
         <a className="skip-link" href="#main-content">
           Skip to content

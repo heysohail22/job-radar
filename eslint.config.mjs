@@ -4,6 +4,7 @@ import nextTypescript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
+  { settings: { next: { rootDir: "website/" } } },
   {
     files: ["mobile/**/*.{ts,tsx,cjs}"],
     rules: {

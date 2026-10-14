@@ -1,13 +1,5 @@
 @import "tailwindcss";
 .jr-prototype {
-  --bg: #f4f6f3;
-  --ink: #182a23;
-  --muted: #617169;
-  --accent: #146c4e;
-  --soft: #e7f2e9;
-  --border: #dfe6df;
-  --dark: #142d24;
-  --lime: #c6f16e;
   font-family:
     Inter,
     ui-sans-serif,
@@ -17,7 +9,7 @@
   color: var(--ink);
   font-size: 14px;
   line-height: 1.5;
-  background: #e9ede8;
+  background: var(--bg);
   min-height: 100vh;
   width: 100%;
 }
@@ -78,7 +70,7 @@
 }
 .jr-preview-toolbar {
   height: 48px;
-  background: #fff;
+  background: var(--surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -145,7 +137,7 @@
   overflow: hidden;
 }
 .jr-sidebar {
-  background: white;
+  background: var(--surface);
   padding: 32px 20px 28px;
   display: flex;
   flex-direction: column;
@@ -311,7 +303,7 @@
   background: var(--soft);
 }
 .jr-top-actions > .jr-icon-button {
-  background: white;
+  background: var(--surface);
   width: 40px;
   height: 40px;
 }
@@ -323,7 +315,7 @@
   position: absolute;
   right: 0;
   top: 50px;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 20px;
@@ -405,13 +397,13 @@
 }
 .jr-btn.jr-primary {
   background: var(--accent);
-  color: white;
+  color: var(--action-ink);
 }
 .jr-btn.jr-primary:hover {
-  background: var(--dark);
+  background: var(--action-hover);
 }
 .jr-btn.jr-secondary {
-  background: white;
+  background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--border);
 }
@@ -428,7 +420,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   padding: 0 14px;
   border-radius: 15px;
@@ -453,7 +445,7 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 11px 14px;
-  background: white;
+  background: var(--surface);
   color: var(--ink);
   font-size: 12px;
   max-width: 100%;
@@ -484,7 +476,7 @@
   font-size: 11px;
   padding: 7px 10px;
   border: 1px solid var(--border);
-  background: #fff;
+  background: var(--surface);
   border-radius: 10px;
   color: var(--muted);
   white-space: nowrap;
@@ -505,7 +497,7 @@
   min-width: 0;
 }
 .jr-job-card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 18px 20px;
@@ -610,7 +602,7 @@
   color: var(--muted);
   font-size: 11px;
   white-space: nowrap;
-  background: white;
+  background: var(--surface);
 }
 .jr-verification {
   font-size: 10px;
@@ -635,7 +627,7 @@
   display: none;
 }
 .jr-detail-panel {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 22px;
   padding: 24px;
@@ -803,7 +795,7 @@
 .jr-stage-tabs button,
 .jr-mobile-filters button {
   border: 1px solid var(--border);
-  background: white;
+  background: var(--surface);
   padding: 8px 12px;
   border-radius: 11px;
   font-size: 12px;
@@ -874,7 +866,7 @@
 }
 .jr-page-heading h1 > span {
   font-size: 16px;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   padding: 5px 12px;
   border-radius: 12px;
@@ -888,7 +880,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 24px;
   min-height: 300px;
@@ -915,7 +907,7 @@
   margin-bottom: 24px;
 }
 .jr-stat-tile {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 20px;
   padding: 20px;
@@ -977,7 +969,7 @@
   gap: 12px;
 }
 .jr-tracker {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 18px;
   padding: 20px;
@@ -1350,7 +1342,7 @@
     bottom: 0;
     height: 80px;
     padding: 12px 0 20px;
-    background: #fffffffa;
+    background: var(--surface);
     border-top: 1px solid var(--border);
     z-index: 15;
     justify-content: space-around;
@@ -1418,7 +1410,7 @@
     grid-template-columns: 1.45fr 1fr;
   }
   .jr-role-facts > div {
-    background: white;
+    background: var(--surface);
     border: 1px solid var(--border);
     padding: 15px;
   }
@@ -1442,7 +1434,7 @@
   }
   .jr-status-control {
     padding: 16px;
-    background: white;
+    background: var(--surface);
     border-radius: 15px;
     border: 1px solid var(--border);
   }

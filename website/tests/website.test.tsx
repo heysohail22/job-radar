@@ -96,14 +96,73 @@ function props(jobs = [job]) {
 }
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
+  delete document.documentElement.dataset.preference;
+  delete document.documentElement.dataset.sidebar;
+  delete document.documentElement.dataset.theme;
   navigation.params = new URLSearchParams();
-  window.matchMedia = vi.fn().mockReturnValue({ matches: false });
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: false,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  });
 });
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
 describe("job browsing and progress", () => {
+  it("collapses and reopens the sidebar and remembers the choice across routes", async () => {
+    const { unmount } = render(<Website {...props()} />);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Close sidebar" }),
+    );
+    expect(
+      screen
+        .getByRole("button", { name: "Open sidebar" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
+    expect(
+      document.getElementById("workspace-sidebar")?.hasAttribute("inert"),
+    ).toBe(true);
+    expect(localStorage.getItem("jobradar-sidebar")).toBe("collapsed");
+    unmount();
+    render(<Website {...props()} view="saved" />);
+    await userEvent.click(screen.getByRole("button", { name: "Open sidebar" }));
+    expect(
+      document.getElementById("workspace-sidebar")?.hasAttribute("inert"),
+    ).toBe(false);
+    expect(localStorage.getItem("jobradar-sidebar")).toBe("expanded");
+  });
+  it("remembers dark mode and responds to appearance changes from another tab", async () => {
+    const { unmount } = render(<Website {...props()} />);
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Appearance" }),
+      "dark",
+    );
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(localStorage.getItem("jobradar-theme")).toBe("dark");
+    unmount();
+    render(<Website {...props()} view="applications" />);
+    expect(
+      (
+        screen.getByRole("combobox", {
+          name: "Appearance",
+        }) as HTMLSelectElement
+      ).value,
+    ).toBe("dark");
+    localStorage.setItem("jobradar-theme", "light");
+    fireEvent(
+      window,
+      new StorageEvent("storage", { key: "jobradar-theme", newValue: "light" }),
+    );
+    expect(document.documentElement.dataset.theme).toBe("light");
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: "Appearance" }),
+      "system",
+    );
+    expect(document.documentElement.dataset.theme).toBe("light");
+  });
   it("opens the job actually shown after filters hide the previous selection", async () => {
     const other = {
       ...job,
