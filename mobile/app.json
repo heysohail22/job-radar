@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "AI Job Radar",
+    "slug": "ai-job-radar-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-font"],
+    "ios": { "supportsTablet": true },
+    "android": { "package": "com.aijobradar.mobile" }
+  }
+}

@@ -4,5 +4,11 @@ import nextTypescript from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTypescript,
-  globalIgnores([".next/**", "next-env.d.ts"]),
+  globalIgnores([
+    ".next/**",
+    "next-env.d.ts",
+    "mobile/node_modules/**",
+    "mobile/.expo/**",
+    "mobile/dist/**",
+  ]),
 ]);

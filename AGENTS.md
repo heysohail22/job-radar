@@ -1,14 +1,14 @@
 # AGENTS.md — AI Job Radar
 
-## Current phase: website implementation
+## Current phase: website and mobile implementation
 
 The owner requested a fresh start and then authorized implementation from `.codex/SPEC.md`, the Figma design, and the MagicPath prototype on 14 October 2026. The old application was removed.
 
-Read `.codex/SPEC.md` before work. Its original review-only gate has now been satisfied by the owner's build instruction. Continue within the website-only scope below. The owner declined starting the local development server during this session; do not retry that rejected action without a new instruction.
+Read `.codex/SPEC.md` before work. Its original review-only gate has now been satisfied by the owner's build instruction. The owner subsequently authorized a React Native mobile app in `mobile/`, including dark mode. Continue within the scope below. The owner declined starting the local development server during this session; do not retry that rejected action without a new instruction.
 
 ## Scope
 
-Build a personal, responsive job discovery website using the existing `ai-job-radar` Supabase project. Desktop and phone browsers use one website and codebase. Native mobile apps and Expo are deferred.
+Build a personal, responsive job discovery website using the existing `ai-job-radar` Supabase project. Desktop and phone browsers use one website and codebase. The native mobile app uses Expo SDK 57 and React Native in `mobile/`, with a separate package in the pnpm workspace.
 
 Version one includes Discover, job details, Saved Jobs, and Applications. It reads existing jobs and matching scores, supports search and filters, and persists bookmarks and application progress in Supabase.
 
@@ -23,7 +23,7 @@ Do not add Auth, login, registration, user onboarding, a crawler, resume editing
 
 ## Architecture
 
-The root application uses Next.js App Router, React, TypeScript, Tailwind CSS, locally packaged Inter fonts, and pnpm. Supabase access is confined to `lib/server/` and Next.js route handlers. There is no FastAPI or SQLite service. Linting uses the supported ESLint 9 / TypeScript 5.9 combination; dependencies are pinned in package.json and pnpm-lock.yaml.
+The root application uses Next.js App Router, React, TypeScript, Tailwind CSS, locally packaged Inter fonts, and pnpm. Supabase access is confined to `lib/server/` and Next.js route handlers. The mobile app calls the loopback API using USB port reversal on Android or an iOS simulator; it never bundles Supabase credentials. No LAN/internet access to privileged endpoints is added. Theme preference alone may be stored in mobile AsyncStorage. There is no FastAPI or SQLite service. Linting uses the supported ESLint 9 / TypeScript 5.9 combination; dependencies are pinned in package.json and pnpm-lock.yaml.
 
 Dev and production builds explicitly use Webpack because Turbopack's PostCSS worker needs a port disallowed by this environment. `experimental.useTypeScriptCli: false` uses Next.js's supported TypeScript compiler-API integration; type checking is enabled, not skipped.
 

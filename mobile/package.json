@@ -1,0 +1,22 @@
+{
+  "name": "@job-radar/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --localhost",
+    "android": "expo start --localhost --android",
+    "ios": "expo start --localhost --ios",
+    "typecheck": "tsc --noEmit",
+    "export": "expo export --platform android --platform ios"
+  },
+  "dependencies": {
+    "expo": "57.0.29",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/react": "19.2.14"
+  }
+}
