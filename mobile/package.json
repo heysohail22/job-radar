@@ -8,7 +8,8 @@
     "android": "expo start --localhost --android",
     "ios": "expo start --localhost --ios",
     "typecheck": "tsc --noEmit",
-    "export": "expo export --platform android --platform ios"
+    "export": "expo export --platform android --platform ios",
+    "build:android": "bash scripts/build-android.sh"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "0.4.2",

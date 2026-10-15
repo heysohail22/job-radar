@@ -54,3 +54,5 @@ out/
 build/
 .vercel
 *.pem
+# Local Android build toolchain
+.local-tools/

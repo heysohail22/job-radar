@@ -1,0 +1,13 @@
+// Limit native compiler concurrency as well as Gradle workers.
+// Gradle's --max-workers alone does not limit Ninja's C++ compilation jobs.
+allprojects { project ->
+    ['com.android.application', 'com.android.library'].each { pluginId ->
+        project.pluginManager.withPlugin(pluginId) {
+            project.extensions.getByName('android').defaultConfig.externalNativeBuild.cmake.arguments(
+                '-DCMAKE_JOB_POOLS=jobradar_compile=1;jobradar_link=1',
+                '-DCMAKE_JOB_POOL_COMPILE=jobradar_compile',
+                '-DCMAKE_JOB_POOL_LINK=jobradar_link'
+            )
+        }
+    }
+}

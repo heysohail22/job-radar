@@ -4,7 +4,7 @@
 
 The owner requested a fresh start and then authorized implementation from `.codex/SPEC.md`, the Figma design, and the MagicPath prototype on 14 October 2026. The old application was removed.
 
-Read `.codex/SPEC.md` before work. Its original review-only gate has now been satisfied by the owner's build instruction. The owner subsequently authorized a React Native mobile app in `mobile/`, including dark mode. Continue within the scope below. The owner declined starting the local development server during this session; do not retry that rejected action without a new instruction.
+Read `.codex/SPEC.md` before work. Its original review-only gate has now been satisfied by the owner's build instruction. The owner subsequently authorized a React Native mobile app in `mobile/`, including dark mode. Continue within the scope below. The owner initially declined starting the local development server, then authorized phone installation on 15 October 2026. The local website API and mobile Metro server were started with command approval for that installation. Keep these servers localhost-only.
 
 ## Scope
 
@@ -23,7 +23,7 @@ Do not add Auth, login, registration, user onboarding, a crawler, resume editing
 
 ## Architecture
 
-The website in `website/` uses Next.js App Router, React, TypeScript, Tailwind CSS, locally packaged Inter fonts, and pnpm. Supabase access is confined to `website/lib/server/` and Next.js route handlers. The mobile app calls the loopback API using USB port reversal on Android or an iOS simulator; it never bundles Supabase credentials. No LAN/internet access to privileged endpoints is added. Theme preference alone may be stored in mobile AsyncStorage. There is no FastAPI or SQLite service. Website linting uses the supported ESLint 9 / TypeScript 5.9 combination; mobile type checking uses Expo SDK 57’s recommended TypeScript 6.0.3; dependencies are pinned in package.json and pnpm-lock.yaml.
+The website in `website/` uses Next.js App Router, React, TypeScript, Tailwind CSS, locally packaged Inter fonts, and pnpm. Supabase access is confined to `website/lib/server/` and Next.js route handlers. The mobile app calls the loopback API using ADB port reversal over a paired USB/wireless debugging connection on Android or an iOS simulator; it never bundles Supabase credentials. No LAN/internet access to privileged endpoints is added. Theme preference alone may be stored in mobile AsyncStorage. There is no FastAPI or SQLite service. Website linting uses the supported ESLint 9 / TypeScript 5.9 combination; mobile type checking uses Expo SDK 57’s recommended TypeScript 6.0.3; dependencies are pinned in package.json and pnpm-lock.yaml.
 
 Dev and production builds explicitly use Webpack because Turbopack's PostCSS worker needs a port disallowed by this environment. `experimental.useTypeScriptCli: false` uses Next.js's supported TypeScript compiler-API integration; type checking is enabled, not skipped.
 
@@ -82,3 +82,5 @@ Mobile commands: `pnpm --dir mobile start`, `pnpm --dir mobile typecheck`, and `
 The owner requested the website be grouped into `website/`. Root package scripts forward website operations; workspace lint covers both applications. Website code, config, assets, SQL, tests and server environment files live under `website/`. Root `AGENTS.md`, `.codex/`, README, ESLint workspace configuration, package manifest and pnpm lock/workspace files remain repository-level. Mobile currently imports only pure types/URL validation from `website/lib/`; never import its server modules into mobile.
 
 Website appearance and sidebar preferences may be stored in localStorage (`jobradar-theme` and `jobradar-sidebar`); authoritative jobs, bookmarks and application progress must still remain in Supabase. The website provides system/light/dark appearance and a desktop sidebar collapse/reopen control.
+
+For local Android APK builds on this ~7 GB RAM machine, use `pnpm --dir mobile build:android`. It limits Gradle and native compilation concurrency and heap usage. Avoid running website/Metro servers during native compilation. The JDK under `.local-tools/` is ignored and must never be published.

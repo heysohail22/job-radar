@@ -55,8 +55,18 @@ pnpm lint
 pnpm test
 ```
 
-Export compiles Android and iOS JavaScript/assets; it does not produce an APK/IPA or prove device behavior. No native binaries are signed or published here.
+Export compiles Android and iOS JavaScript/assets; it does not produce an APK/IPA or prove device behavior. The export command does not sign or publish native binaries. Local native debug builds use a development signing certificate and can be installed directly on a test phone.
 
 ## Design references
 
 Figma file `zzzVHhneAYBLrXVqIvnmSw`, phone nodes `1:712`, `1:768`, `1:805`, `1:830`; MagicPath component `461166553119989760`, revision `461168243906846720`. Figma reads were rate-limited during this work. The implementation uses the accessible prototype and previously downloaded Figma SVGs, retaining their native geometry. The Saved empty state currently shares the Applications illustration as the website does. Dark mode is an adaptation of the approved palette, not a new approved Figma frame. Device visual review is still required.
+
+## Native Android installation
+
+With Android SDK and a compatible JDK installed, run `pnpm --dir mobile exec expo run:android --device` to generate the native Android project and install a debug build with its own AI Job Radar icon. The first build downloads native build dependencies. This build needs Metro and the website API while in use.
+
+Paired wireless ADB supports the same port forwarding as USB: run `adb -s DEVICE reverse tcp:3000 tcp:3000` and `adb -s DEVICE reverse tcp:8081 tcp:8081`, replacing DEVICE with its current identifier from `adb devices`. Debugging addresses can change after reconnecting. Both servers remain on localhost; forwarding uses the paired debugging connection.
+
+## Building on a computer with limited RAM
+
+Use `pnpm --dir mobile build:android` for a local arm64 Android debug APK. This caps Gradle at one worker with a 1536 MB heap, runs Kotlin in-process, and uses CMake/Ninja compile and link pools of one job. Stop the website and Metro servers while compiling, then restart them for phone use. The helper uses `JAVA_HOME`, or the ignored `.local-tools/jdk21` toolchain when available. The output is `mobile/android/app/build/outputs/apk/debug/app-debug.apk`. These limits trade build speed for lower peak memory.
