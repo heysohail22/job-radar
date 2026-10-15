@@ -84,3 +84,5 @@ The owner requested the website be grouped into `website/`. Root package scripts
 Website appearance and sidebar preferences may be stored in localStorage (`jobradar-theme` and `jobradar-sidebar`); authoritative jobs, bookmarks and application progress must still remain in Supabase. The website provides system/light/dark appearance and a desktop sidebar collapse/reopen control.
 
 For local Android APK builds on this ~7 GB RAM machine, use `pnpm --dir mobile build:android`. It limits Gradle and native compilation concurrency and heap usage. Avoid running website/Metro servers during native compilation. The JDK under `.local-tools/` is ignored and must never be published.
+
+For phone APK updates, increment Expo `version` and Android `versionCode`, use a versioned APK filename, and verify the installed version or APK digest through ADB. File Manager’s INSTALLED label and an owner confirmation alone do not establish that the new binary replaced the old one. Keep prior APKs as backups rather than uninstalling the app or deleting its data.

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   Alert,
   AppState,
   BackHandler,
@@ -25,7 +26,13 @@ import { Inter_700Bold } from "@expo-google-fonts/inter/700Bold";
 import { SvgXml } from "react-native-svg";
 import { Asset } from "expo-asset";
 import { File } from "expo-file-system";
-import type { Feed, Filters, Job, JobStatus, View as Page } from "../website/lib/types";
+import type {
+  Feed,
+  Filters,
+  Job,
+  JobStatus,
+  View as Page,
+} from "../website/lib/types";
 import { safeApplicationUrl } from "../website/lib/validation";
 import { ApiError, fetchFeed, fetchJob, mutateJob } from "./src/api";
 import {
@@ -373,7 +380,16 @@ function AppContent() {
           button("‹ Back", () => setDetail(undefined))
         ) : (
           <View>
-            <Text style={s.brand}>◉ AI Job Radar</Text>
+            <View style={s.brandRow}>
+              <Image
+                source={require("./assets/branding/app-icon.png")}
+                  alt=""
+                style={s.brandLogo}
+                accessibilityIgnoresInvertColors
+                accessible={false}
+              />
+              <Text style={s.brand}>AI Job Radar</Text>
+            </View>
             <Text style={s.small}>A little clarity for your next move</Text>
           </View>
         )}
@@ -816,6 +832,8 @@ function styles(c: Palette) {
       borderBottomWidth: 1,
       borderColor: c.border,
     },
+    brandRow: { flexDirection: "row", alignItems: "center", gap: 9 },
+    brandLogo: { width: 32, height: 32, borderRadius: 10 },
     brand: { fontFamily: "Inter_700Bold", fontSize: 21, color: c.ink },
     small: {
       fontFamily: "Inter_400Regular",

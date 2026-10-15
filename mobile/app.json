@@ -2,11 +2,36 @@
   "expo": {
     "name": "AI Job Radar",
     "slug": "ai-job-radar-mobile",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "plugins": ["expo-font"],
-    "ios": { "supportsTablet": true },
-    "android": { "package": "com.aijobradar.mobile" }
+    "plugins": [
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/branding/app-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#142D24",
+          "dark": {
+            "image": "./assets/branding/app-icon.png",
+            "backgroundColor": "#142D24"
+          }
+        }
+      ]
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.aijobradar.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/branding/app-icon.png",
+        "backgroundColor": "#142D24"
+      },
+      "versionCode": 2
+    },
+    "icon": "./assets/branding/app-icon.png"
   }
 }
