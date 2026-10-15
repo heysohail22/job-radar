@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Image,
@@ -18,14 +24,14 @@ import {
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
+import * as SplashScreen from "expo-splash-screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
 import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
 import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
 import { Inter_700Bold } from "@expo-google-fonts/inter/700Bold";
 import { SvgXml } from "react-native-svg";
-import { Asset } from "expo-asset";
-import { File } from "expo-file-system";
+import { artwork } from "./src/art";
 import type {
   Feed,
   Filters,
@@ -52,36 +58,14 @@ const initialFilters: Filters = {
   page: 1,
   stage: "all",
 };
-const artFiles = {
-  radar: require("./assets/536d8.svg"),
-  empty: require("./assets/b1468.svg"),
-  discover: require("./assets/c4704.svg"),
-  saved: require("./assets/51433.svg"),
-  applications: require("./assets/092ca.svg"),
-  search: require("./assets/6fb11.svg"),
-  filter: require("./assets/16055.svg"),
-  back: require("./assets/acd25.svg"),
-  bookmark: require("./assets/0ab2b.svg"),
-} as const;
-function Art({ name }: { name: keyof typeof artFiles }) {
-  const [xml, setXml] = useState<string>();
-  useEffect(() => {
-    let active = true;
-    Asset.fromModule(artFiles[name])
-      .downloadAsync()
-      .then((asset) => {
-        if (!asset.localUri) return;
-        return new File(asset.localUri).text();
-      })
-      .then((value) => {
-        if (active && value) setXml(value);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [name]);
-  return xml ? <SvgXml xml={xml} accessible={false} /> : null;
+function Art({ name }: { name: keyof typeof artwork }) {
+  return (
+    <SvgXml
+      xml={artwork[name]}
+      accessible={false}
+      {...(name === "radar" ? { width: 80, height: 80 } : {})}
+    />
+  );
 }
 const title = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 function AppContent() {
@@ -89,13 +73,13 @@ function AppContent() {
   const [preference, setPreference] = useState<ThemePreference>("system");
   const [themeReady, setThemeReady] = useState(false);
   const theme = resolveTheme(preference, system),
-    colors = palettes[theme],
-    s = styles(colors);
-  const [fontsLoaded, fontError] = useFonts({
+    colors = palettes[theme];
+  const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
     Inter_700Bold,
   });
+  const s = useMemo(() => styles(colors, fontsLoaded), [colors, fontsLoaded]);
   const [page, setPage] = useState<Page>("discover");
   const [filters, setFilters] = useState(initialFilters);
   const [search, setSearch] = useState("");
@@ -366,14 +350,14 @@ function AppContent() {
       )}
     </View>
   );
-  if ((!fontsLoaded && !fontError) || !themeReady)
-    return (
-      <SafeAreaView style={[s.screen, { justifyContent: "center" }]}>
-        <ActivityIndicator color={colors.accent} />
-      </SafeAreaView>
-    );
   return (
-    <SafeAreaView style={s.screen} edges={["top", "left", "right", "bottom"]}>
+    <SafeAreaView
+      style={s.screen}
+      edges={["top", "left", "right", "bottom"]}
+      onLayout={() => {
+        void SplashScreen.hideAsync().catch(() => {});
+      }}
+    >
       <StatusBar style={theme === "dark" ? "light" : "dark"} />
       <View style={s.header}>
         {detail ? (
@@ -383,7 +367,8 @@ function AppContent() {
             <View style={s.brandRow}>
               <Image
                 source={require("./assets/branding/app-icon.png")}
-                  alt=""
+                alt=""
+                resizeMethod="resize"
                 style={s.brandLogo}
                 accessibilityIgnoresInvertColors
                 accessible={false}
@@ -497,6 +482,9 @@ function AppContent() {
         </>
       ) : (
         <FlatList
+          initialNumToRender={6}
+          maxToRenderPerBatch={4}
+          windowSize={7}
           data={feed?.jobs ?? []}
           keyExtractor={(job) => job.id}
           renderItem={({ item }) => card(item)}
@@ -505,7 +493,7 @@ function AppContent() {
           refreshing={loading}
           onRefresh={() => void load()}
           ListHeaderComponent={
-            <>
+            <View style={s.feedHeader}>
               <View style={s.hero}>
                 <Text style={s.eyebrow}>
                   {page === "applications"
@@ -624,7 +612,7 @@ function AppContent() {
                   {button("Retry", () => void load(), true)}
                 </View>
               )}
-            </>
+            </View>
           }
           ListEmptyComponent={
             !loading && !error ? (
@@ -819,7 +807,10 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-function styles(c: Palette) {
+function styles(c: Palette, fontsReady = true) {
+  const regular = fontsReady ? "Inter_400Regular" : undefined;
+  const semibold = fontsReady ? "Inter_600SemiBold" : undefined;
+  const bold = fontsReady ? "Inter_700Bold" : undefined;
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: c.bg },
     flex: { flex: 1 },
@@ -834,26 +825,27 @@ function styles(c: Palette) {
     },
     brandRow: { flexDirection: "row", alignItems: "center", gap: 9 },
     brandLogo: { width: 32, height: 32, borderRadius: 10 },
-    brand: { fontFamily: "Inter_700Bold", fontSize: 21, color: c.ink },
+    brand: { fontFamily: bold, fontSize: 21, color: c.ink },
     small: {
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
       fontSize: 12,
       lineHeight: 18,
       color: c.muted,
     },
     muted: {
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
       fontSize: 14,
       lineHeight: 21,
       color: c.muted,
     },
     body: {
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
       fontSize: 15,
       lineHeight: 25,
       color: c.ink,
     },
     content: { padding: 20, gap: 18, paddingBottom: 30 },
+    feedHeader: { gap: 16 },
     row: { flexDirection: "row", alignItems: "center", gap: 12 },
     card: {
       backgroundColor: c.card,
@@ -873,7 +865,7 @@ function styles(c: Palette) {
       justifyContent: "center",
     },
     monogramText: {
-      fontFamily: "Inter_700Bold",
+      fontFamily: bold,
       fontSize: 20,
       color: c.accent,
     },
@@ -887,14 +879,14 @@ function styles(c: Palette) {
       borderColor: c.border,
     },
     jobTitle: {
-      fontFamily: "Inter_600SemiBold",
+      fontFamily: semibold,
       fontSize: 19,
       lineHeight: 27,
       color: c.ink,
     },
     wrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     tag: {
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
       fontSize: 12,
       lineHeight: 18,
       color: c.muted,
@@ -909,8 +901,8 @@ function styles(c: Palette) {
       alignItems: "center",
       gap: 10,
     },
-    score: { fontFamily: "Inter_600SemiBold", fontSize: 14, color: c.accent },
-    link: { fontFamily: "Inter_600SemiBold", fontSize: 14, color: c.accent },
+    score: { fontFamily: semibold, fontSize: 14, color: c.accent },
+    link: { fontFamily: semibold, fontSize: 14, color: c.accent },
     button: {
       minHeight: 48,
       paddingHorizontal: 16,
@@ -923,7 +915,7 @@ function styles(c: Palette) {
       backgroundColor: c.card,
     },
     primary: { backgroundColor: c.accent, borderColor: c.accent },
-    buttonText: { fontFamily: "Inter_600SemiBold", fontSize: 14, color: c.ink },
+    buttonText: { fontFamily: semibold, fontSize: 14, color: c.ink },
     chip: {
       minHeight: 44,
       paddingHorizontal: 15,
@@ -935,29 +927,29 @@ function styles(c: Palette) {
       justifyContent: "center",
     },
     chipActive: { backgroundColor: c.soft, borderColor: c.accent },
-    chipText: { fontFamily: "Inter_600SemiBold", fontSize: 13, color: c.muted },
+    chipText: { fontFamily: semibold, fontSize: 13, color: c.muted },
     hero: {
       backgroundColor: c.hero,
       borderRadius: 26,
-      padding: 22,
-      gap: 12,
+      padding: 20,
+      gap: 10,
       overflow: "hidden",
     },
     eyebrow: {
-      fontFamily: "Inter_600SemiBold",
+      fontFamily: semibold,
       fontSize: 10,
       letterSpacing: 1.7,
       color: c.lime,
     },
     heroTitle: {
-      fontFamily: "Inter_700Bold",
-      fontSize: 32,
-      lineHeight: 39,
+      fontFamily: bold,
+      fontSize: 29,
+      lineHeight: 35,
       letterSpacing: -0.7,
       color: "#FFFFFF",
     },
     heroBody: {
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
       fontSize: 13,
       lineHeight: 21,
       color: "#DCE7DE",
@@ -967,7 +959,7 @@ function styles(c: Palette) {
       alignItems: "center",
       justifyContent: "space-between",
     },
-    heroCount: { fontFamily: "Inter_700Bold", fontSize: 29, color: c.lime },
+    heroCount: { fontFamily: bold, fontSize: 29, color: c.lime },
     search: {
       flex: 1,
       flexDirection: "row",
@@ -982,7 +974,7 @@ function styles(c: Palette) {
     },
     input: {
       flex: 1,
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
       fontSize: 14,
       color: c.ink,
       minHeight: 50,
@@ -998,21 +990,21 @@ function styles(c: Palette) {
       justifyContent: "center",
     },
     heading: {
-      fontFamily: "Inter_700Bold",
+      fontFamily: bold,
       fontSize: 29,
       lineHeight: 37,
       color: c.ink,
     },
     section: { gap: 10, paddingVertical: 4 },
     sectionTitle: {
-      fontFamily: "Inter_600SemiBold",
+      fontFamily: semibold,
       fontSize: 18,
       lineHeight: 26,
       color: c.ink,
     },
     empty: { alignItems: "center", paddingVertical: 30 },
     stats: { flexDirection: "row", gap: 8 },
-    statValue: { fontFamily: "Inter_700Bold", fontSize: 24, color: c.ink },
+    statValue: { fontFamily: bold, fontSize: 24, color: c.ink },
     nav: {
       flexDirection: "row",
       paddingHorizontal: 18,
@@ -1022,7 +1014,14 @@ function styles(c: Palette) {
       borderTopWidth: 1,
       borderColor: c.border,
     },
-    navIcon: { backgroundColor: "#E7F2E9", padding: 5, borderRadius: 9 },
+    navIcon: {
+      backgroundColor: "#E7F2E9",
+      width: 30,
+      height: 30,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 9,
+    },
     navItem: {
       flex: 1,
       minHeight: 56,
@@ -1047,7 +1046,7 @@ function styles(c: Palette) {
       color: c.error,
       fontSize: 14,
       lineHeight: 22,
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
     },
     banner: {
       paddingHorizontal: 20,
@@ -1073,7 +1072,7 @@ function styles(c: Palette) {
       borderRadius: 14,
       padding: 14,
       color: c.ink,
-      fontFamily: "Inter_400Regular",
+      fontFamily: regular,
     },
   });
 }

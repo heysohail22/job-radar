@@ -2,7 +2,7 @@
   "expo": {
     "name": "AI Job Radar",
     "slug": "ai-job-radar-mobile",
-    "version": "1.0.1",
+    "version": "1.0.3",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "plugins": [
@@ -19,7 +19,18 @@
             "backgroundColor": "#142D24"
           }
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "useLegacyPackaging": true
+          }
+        }
+      ],
+      "./plugins/with-local-api.cjs"
     ],
     "ios": {
       "supportsTablet": true
@@ -30,7 +41,7 @@
         "foregroundImage": "./assets/branding/app-icon.png",
         "backgroundColor": "#142D24"
       },
-      "versionCode": 2
+      "versionCode": 4
     },
     "icon": "./assets/branding/app-icon.png"
   }

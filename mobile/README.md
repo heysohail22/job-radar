@@ -70,3 +70,13 @@ Paired wireless ADB supports the same port forwarding as USB: run `adb -s DEVICE
 ## Building on a computer with limited RAM
 
 Use `pnpm --dir mobile build:android` for a local arm64 Android debug APK. This caps Gradle at one worker with a 1536 MB heap, runs Kotlin in-process, and uses CMake/Ninja compile and link pools of one job. Stop the website and Metro servers while compiling, then restart them for phone use. The helper uses `JAVA_HOME`, or the ignored `.local-tools/jdk21` toolchain when available. The output is `mobile/android/app/build/outputs/apk/debug/app-debug.apk`. These limits trade build speed for lower peak memory.
+
+## Smaller app that opens without Metro
+
+Run `pnpm --dir mobile build:android:lite` to build the optimized arm64 APK at `mobile/android/app/build/outputs/apk/release/app-release.apk`. It embeds Hermes bytecode, fonts and artwork, and enables R8/resource shrinking and compressed native-library packaging. This is a local personal build signed with the existing development certificate for updates, not a store distribution setup.
+
+The installed release app opens without Metro. Jobs and writes still require the website API (`pnpm dev`) and paired ADB port reversal for port 3000. When that API is unavailable, the shell still opens and shows a retryable connection error. HTTP is allowed only to loopback hosts by the network security config plugin. A debug APK continues to need Metro.
+
+Startup renders immediately with system fonts while Inter and the theme preference load. The splash screen hides once the root view lays out; Figma SVG markup is bundled in `src/art.ts` so icons render synchronously without filesystem reads, and the initial list render is bounded.
+
+Release checks need a larger class-metadata budget: the helper caps metaspace at 768 MB for release (384 MB for debug), retains the 1536 MB Java heap and one worker, and caps Metro’s Node heap at 1024 MB.

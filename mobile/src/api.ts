@@ -1,4 +1,10 @@
-import type { Feed, Filters, Job, Mutation, View } from "../../website/lib/types";
+import type {
+  Feed,
+  Filters,
+  Job,
+  Mutation,
+  View,
+} from "../../website/lib/types";
 
 export class ApiError extends Error {
   constructor(
@@ -39,7 +45,7 @@ export function feedQuery(view: View, filters: Filters) {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const origin = apiOrigin();
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), 8000);
   try {
     const response = await fetch(`${origin}${path}`, {
       ...init,
@@ -60,7 +66,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new Error(
-      "Cannot reach your local website API. Check the server and USB connection, then retry.",
+      "Cannot connect to your computer. Start AI Job Radar on your computer and reconnect your phone, then tap Retry.",
     );
   } finally {
     clearTimeout(timer);
