@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { apiOrigin, fetchFeed, mutateJob } from "../../mobile/src/api";
+import {
+  apiOrigin,
+  fetchFeed,
+  fetchJob,
+  mutateJob,
+} from "../../mobile/src/api";
 import { resolveTheme } from "../../mobile/src/theme";
 import type { Job } from "../lib/types";
 
@@ -31,13 +36,11 @@ describe("mobile API boundary", () => {
   it("surfaces conflicts for refresh rather than treating them as success", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: false,
-          status: 409,
-          json: async () => ({ error: "Refresh this job." }),
-        }),
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: "Refresh this job." }),
+      }),
     );
     await expect(
       mutateJob({ matchId: "match-123", revision: 7 } as Job, {
@@ -64,6 +67,78 @@ describe("mobile API boundary", () => {
     expect(params.get("q")).toBe("C++ & AI");
     expect(params.get("page")).toBe("2");
     expect(params.get("view")).toBe("saved");
+  });
+  it("browses public jobs over HTTPS without sending private profile or tracking fields", async () => {
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        jobs: [
+          {
+            id: "job-public",
+            title: "Engineer",
+            company: "Example",
+            apply_url: "javascript:alert(1)",
+          },
+        ],
+        total: 32,
+        summary: { total: 32, remote: 9, last_seen: null },
+      }),
+    });
+    vi.stubGlobal("fetch", fetcher);
+    const feed = await fetchFeed("discover", {
+      search: "C++ & AI",
+      mode: "remote",
+      location: "India",
+      minScore: 80,
+      posting: "open",
+      sort: "recent",
+      page: 2,
+      stage: "all",
+    });
+    const [url, options] = fetcher.mock.calls[0];
+    expect(url).toBe(
+      "https://tybrswbrqmoxznizheuu.supabase.co/rest/v1/rpc/job_radar_public_feed",
+    );
+    expect(options.headers.apikey).toMatch(/^sb_publishable_/);
+    expect(JSON.parse(options.body)).toEqual({
+      p_search: "C++ & AI",
+      p_mode: "remote",
+      p_location: "India",
+      p_posting: "open",
+      p_sort: "recent",
+      p_limit: 20,
+      p_offset: 20,
+    });
+    expect(feed.jobs[0]).toMatchObject({
+      matchId: null,
+      score: null,
+      applicationUrl: null,
+    });
+  });
+  it("reports internet failure without asking for a computer during public browsing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Network request failed")),
+    );
+    await expect(fetchJob("missing")).rejects.toThrow(
+      "Check your internet connection",
+    );
+  });
+  it("returns a missing-job error for an unavailable public role", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            jobs: [],
+            total: 0,
+            summary: { total: 32, remote: 9, last_seen: null },
+          }),
+        }),
+    );
+    await expect(fetchJob("missing")).rejects.toMatchObject({ status: 404 });
   });
   it("follows system appearance unless explicitly overridden", () => {
     expect(resolveTheme("system", "dark")).toBe("dark");

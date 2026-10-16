@@ -1,6 +1,6 @@
 # AI Job Radar mobile
 
-Native React Native app using Expo SDK 57, alongside the existing Next.js website. Discover, Saved, Activity and job details share the same Supabase workspace through the website’s server API. No login is added.
+Native React Native app using Expo SDK 57, alongside the existing Next.js website. Discover and public job details read listings directly from Supabase over HTTPS using a publishable key. They need internet, but no computer, Metro, or login in the installed release APK. Saved and Activity remain private through the local website API.
 
 ## Run locally
 
@@ -17,7 +17,7 @@ In another terminal:
 pnpm --dir mobile start
 ```
 
-The default API is `http://127.0.0.1:3000`. You can copy `mobile/.env.example` to `mobile/.env.local` to change the local port. Never add Supabase credentials to mobile environment variables or source: Expo public variables are bundled into the app.
+The default API is `http://127.0.0.1:3000`. You can copy `mobile/.env.example` to `mobile/.env.local` to change the local port. The Supabase publishable key is intentionally bundled for public read-only jobs. Never add a secret/service-role key to mobile environment variables or source: Expo public variables are bundled into the app.
 
 ### Android phone over USB or Android emulator
 
@@ -75,7 +75,7 @@ Use `pnpm --dir mobile build:android` for a local arm64 Android debug APK. This 
 
 Run `pnpm --dir mobile build:android:lite` to build the optimized arm64 APK at `mobile/android/app/build/outputs/apk/release/app-release.apk`. It embeds Hermes bytecode, fonts and artwork, and enables R8/resource shrinking and compressed native-library packaging. This is a local personal build signed with the existing development certificate for updates, not a store distribution setup.
 
-The installed release app opens without Metro. Jobs and writes still require the website API (`pnpm dev`) and paired ADB port reversal for port 3000. When that API is unavailable, the shell still opens and shows a retryable connection error. HTTP is allowed only to loopback hosts by the network security config plugin. A debug APK continues to need Metro.
+The installed release app opens without Metro. Public jobs load directly from Supabase, including server-filtered search, work mode, location, posting status, pagination and details. Only Saved/Activity and their writes require the website API (`pnpm dev`) and paired ADB port reversal for port 3000. The public feed never reads match scores, evidence, bookmarks or application stages. The database permits anonymous SELECT of explicit listing columns only, denies anonymous writes and hides raw collector data. HTTP is allowed only to loopback hosts by the network security config plugin. A debug APK continues to need Metro.
 
 Startup renders immediately with system fonts while Inter and the theme preference load. The splash screen hides once the root view lays out; Figma SVG markup is bundled in `src/art.ts` so icons render synchronously without filesystem reads, and the initial list render is bounded.
 

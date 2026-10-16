@@ -54,7 +54,7 @@ const initialFilters: Filters = {
   location: "",
   minScore: 0,
   posting: "all",
-  sort: "best",
+  sort: "recent",
   page: 1,
   stage: "all",
 };
@@ -136,7 +136,7 @@ function AppContent() {
       if (state === "active") {
         void load();
         if (detail)
-          fetchJob(detail.id)
+          fetchJob(detail.id, !!detail.matchId)
             .then((fresh) =>
               setDetail((current) =>
                 current?.id === fresh.id ? fresh : current,
@@ -197,7 +197,7 @@ function AppContent() {
         if (detail) {
           try {
             {
-              const fresh = await fetchJob(detail.id);
+              const fresh = await fetchJob(detail.id, !!detail.matchId);
               setDetail((current) =>
                 current?.id === fresh.id ? fresh : current,
               );
@@ -291,7 +291,7 @@ function AppContent() {
           <Text style={s.muted}>{job.company}</Text>
           <Text style={s.small}>{job.location ?? "Location not listed"}</Text>
         </View>
-        {saveButton(job)}
+        {job.matchId && saveButton(job)}
       </View>
       <Pressable
         accessibilityRole="button"
@@ -310,7 +310,7 @@ function AppContent() {
         </View>
         <View style={s.cardFooter}>
           <Text style={s.score}>
-            {job.score === null ? "Not scored" : `${job.score}% match`}
+            {job.score === null ? "Job listing" : `${job.score}% match`}
           </Text>
           <Text style={s.link}>View role ↗</Text>
         </View>
@@ -387,6 +387,14 @@ function AppContent() {
           <Text style={s.link}>{theme === "dark" ? "☾" : "☀"}</Text>
         </Pressable>
       </View>
+      {!detail && page !== "discover" && (
+        <View style={s.banner}>
+          <Text style={s.small}>
+            Saved jobs and application tracking use your private computer
+            connection. Discover works anywhere without it.
+          </Text>
+        </View>
+      )}
       {notice !== "" && (
         <Pressable
           accessibilityRole="button"
@@ -407,7 +415,7 @@ function AppContent() {
                 <Text style={s.monogramText}>{detail.company.slice(0, 1)}</Text>
               </View>
               <Text style={[s.muted, s.flex]}>{detail.company}</Text>
-              {saveButton(detail)}
+              {detail.matchId && saveButton(detail)}
             </View>
             <Text style={s.heading}>{detail.title}</Text>
             <Text style={s.muted}>
@@ -415,7 +423,7 @@ function AppContent() {
             </Text>
             <Text style={s.score}>
               {detail.score === null
-                ? "Match score unavailable"
+                ? "Public job listing"
                 : `${detail.score}% match`}
             </Text>
             <View style={s.wrap}>
@@ -428,7 +436,8 @@ function AppContent() {
             <Text style={s.small}>
               {detail.pay ?? "Compensation not listed"}
             </Text>
-            {chips(["Overview", "Match insights"], detailTab, setDetailTab)}
+            {detail.matchId &&
+              chips(["Overview", "Match insights"], detailTab, setDetailTab)}
             {detailTab === "Overview" ? (
               <>
                 {section("About this role", detail.description)}
@@ -454,13 +463,22 @@ function AppContent() {
               Posting status: {detail.postingStatus}. Check the employer’s page
               for current availability.
             </Text>
-            {section("Application progress", title(detail.status))}
-            {button(
-              "Update application progress",
-              () => setSheet("status"),
-              false,
-              busy || !detail.matchId,
+            {!detail.matchId && (
+              <Text style={s.muted}>
+                Job browsing works anywhere. Personal matches, saving, and
+                application tracking are available through your computer
+                connection.
+              </Text>
             )}
+            {detail.matchId &&
+              section("Application progress", title(detail.status))}
+            {detail.matchId &&
+              button(
+                "Update application progress",
+                () => setSheet("status"),
+                false,
+                busy || !detail.matchId,
+              )}
             <Text style={s.small}>
               Opening the employer page does not mark this job applied.
             </Text>
@@ -597,7 +615,7 @@ function AppContent() {
               <View style={s.cardFooter}>
                 <Text style={s.sectionTitle}>
                   {page === "discover"
-                    ? "Your best matches"
+                    ? "Latest opportunities"
                     : page === "saved"
                       ? "Saved opportunities"
                       : "Your applications"}
@@ -752,11 +770,16 @@ function AppContent() {
                     draft.mode,
                     (mode) => setDraft({ ...draft, mode }),
                   )}
-                  <Text style={s.sectionTitle}>Minimum match</Text>
-                  {chips(
-                    ["0", "50", "70", "80", "90"],
-                    String(draft.minScore),
-                    (value) => setDraft({ ...draft, minScore: Number(value) }),
+                  {page !== "discover" && (
+                    <>
+                      <Text style={s.sectionTitle}>Minimum match</Text>
+                      {chips(
+                        ["0", "50", "70", "80", "90"],
+                        String(draft.minScore),
+                        (value) =>
+                          setDraft({ ...draft, minScore: Number(value) }),
+                      )}
+                    </>
                   )}
                   <Text style={s.sectionTitle}>Location</Text>
                   <TextInput
@@ -777,8 +800,12 @@ function AppContent() {
                     (posting) => setDraft({ ...draft, posting }),
                   )}
                   <Text style={s.sectionTitle}>Sort by</Text>
-                  {chips(["best", "recent", "company"], draft.sort, (sort) =>
-                    setDraft({ ...draft, sort }),
+                  {chips(
+                    page === "discover"
+                      ? ["recent", "company"]
+                      : ["best", "recent", "company"],
+                    draft.sort,
+                    (sort) => setDraft({ ...draft, sort }),
                   )}
                   {button("Reset filters", () =>
                     setDraft({ ...initialFilters, search: filters.search }),

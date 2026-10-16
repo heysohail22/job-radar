@@ -5,7 +5,7 @@ One pnpm workspace with two applications:
 - [website/](website/README.md): Next.js website, server API, database setup SQL, assets and tests.
 - [mobile/](mobile/README.md): Expo / React Native app with light, dark and system appearance.
 
-Both clients use the same existing Supabase project through the website server API. Server credentials belong only in ignored `website/.env.local`.
+Both clients use the same existing Supabase project. Mobile Discover and public job details read directly over HTTPS with a publishable key, without a computer or login. Private Saved/Activity still use the localhost website API. Server secrets belong only in ignored `website/.env.local`.
 
 Install dependencies from this folder with `pnpm install`. Root commands continue to work:
 

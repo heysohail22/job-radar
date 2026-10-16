@@ -2,7 +2,7 @@
   "expo": {
     "name": "AI Job Radar",
     "slug": "ai-job-radar-mobile",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "plugins": [
@@ -41,7 +41,7 @@
         "foregroundImage": "./assets/branding/app-icon.png",
         "backgroundColor": "#142D24"
       },
-      "versionCode": 4
+      "versionCode": 5
     },
     "icon": "./assets/branding/app-icon.png"
   }
