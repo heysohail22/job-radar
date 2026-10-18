@@ -35,6 +35,13 @@ class CollectorRuntime:
         if not self.db.rpc("collector_acquire", {"p_run": ident}):
             raise ApiError("Another collector run is active. Try again later.", 409)
         try:
+            if schedule_day and self.db.rows(
+                "collector_runs",
+                select="id",
+                **{"summary->>schedule_day": "eq." + schedule_day},
+                limit="1",
+            ):
+                raise ApiError("Today’s scheduled run already exists.", 409)
             if not run_id:
                 self.db.insert(
                     "collector_runs",

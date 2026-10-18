@@ -8,14 +8,17 @@
     "dev": "pnpm --dir website dev",
     "build": "pnpm --dir website build",
     "start": "pnpm --dir website start",
-    "typecheck": "pnpm --dir website typecheck && pnpm --dir backend typecheck && pnpm --dir collector typecheck && pnpm --dir mobile typecheck",
-    "test": "pnpm --dir website test && pnpm --dir backend test && pnpm --dir collector test",
+    "typecheck": "pnpm --dir website typecheck && pnpm --dir mobile typecheck && uv run --directory backend --frozen python -m compileall -q job_radar",
+    "test": "pnpm --dir website test && pnpm backend:test",
     "format": "pnpm --dir website format",
     "check:db": "pnpm --dir website check:db",
-    "lint": "eslint --config eslint.config.mjs website mobile backend collector packages",
-    "backend": "pnpm --dir backend start",
-    "collect": "pnpm --dir collector collect",
-    "collect:preview": "pnpm --dir collector preview"
+    "lint": "eslint --config eslint.config.mjs website mobile packages && pnpm backend:lint",
+    "backend": "uv run --directory backend --frozen python -m job_radar",
+    "collect": "uv run --directory backend --frozen python -m job_radar.cli --write",
+    "collect:preview": "uv run --directory backend --frozen python -m job_radar.cli",
+    "backend:test": "uv run --directory backend --frozen pytest",
+    "backend:lint": "uv run --directory backend --frozen ruff check job_radar tests_python",
+    "backend:install-service": "python3 backend/scripts/install-local-service.py"
   },
   "devDependencies": {
     "eslint": "9.39.5",

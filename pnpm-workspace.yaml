@@ -1,8 +1,6 @@
 packages:
   - mobile
   - website
-  - backend
-  - collector
   - packages/*
 allowBuilds:
   esbuild: true

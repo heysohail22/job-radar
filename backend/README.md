@@ -1,92 +1,115 @@
-# Shared local backend
+# Unified Python backend
 
-Current setup: **local personal workspace, no sign-in**. Daily discovery is enabled for 09:00 Asia/Kolkata while the computer is available. Hosting and authentication remain deferred.
+Deploy **this folder only** as one continuously running service. FastAPI serves
+website/mobile requests while a background LangGraph workflow discovers and scores
+jobs. Everything uses the existing Supabase project; no Firebase, Redis, SQLite,
+second database, Node runtime, or separately deployed collector is needed.
 
-The website and signed-in mobile app use this Fastify API. It listens only on
-127.0.0.1:3001. No hosting or publishing has been performed.
+## Local use
 
-## Run
-
-From the repository root:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then from the
+repository root:
 
 ```sh
+uv sync --project backend --frozen
 pnpm backend
-pnpm dev
 ```
 
-Database credentials have been copied privately from the existing ignored website
-configuration when available. `backend/.env.example` documents names only.
-`JOB_RADAR_PROFILE_VERSION=skills-v2` selects the new skills-only matching rubric.
+Or run `uv run --directory backend --frozen python -m job_radar` directly.
+Copy `.env.example` to ignored `backend/.env` when configuring a new machine.
+Existing local configuration was consolidated from the previous collector and API;
+never copy keys from chat. Process environment variables override this file.
 
-The owner account is allowlisted by `OWNER_USER_ID` and uses Supabase Auth.
-The initial credentials are in the ignored `.local/owner-access.txt` file; do not
-commit or share it. To provision an owner on a new installation, set OWNER_EMAIL
-in backend/.env and run `pnpm --dir backend owner:setup`. Existing passwords are
-never reset automatically. Change the initial password through Supabase account
-administration; no public signup UI or signup API is provided by this backend.
-Before any future public hosting, disable **Allow new users to sign up** in the
-Supabase Authentication settings. The API denies all identities except the owner
-regardless of that setting.
+Local mode is `AUTH_MODE=local`, `HOST=127.0.0.1`, port 3001. The mobile app uses
+ADB reverse forwarding; the website uses `BACKEND_URL=http://127.0.0.1:3001`.
+The server validates loopback peer, Host and browser origin. It does not trust
+forwarded headers. Do not expose local mode publicly.
 
-Private requests require a Supabase bearer access token; the backend validates
-it through Auth and checks the immutable owner ID. Website tokens are HttpOnly
-cookies; mobile tokens use SecureStore. Database secrets never enter either client.
-The public listing API returns no personal scores, application state or raw sources.
+## One cloud service (owner deploys later)
 
-## Routes
+Use this directory as the build context. The included Dockerfile installs hashed,
+locked requirements and starts `python -m job_radar` as an unprivileged user.
+For a Python-native host, install Python 3.12 dependencies with
+`pip install --require-hashes -r requirements.txt`, then start `python -m job_radar`.
+No deployment or hosting configuration has been performed.
 
-- GET /health
-- POST /api/auth/login, /api/auth/refresh, /api/auth/logout; GET /api/auth/me
-- GET /api/public/jobs and /api/public/jobs/:id (listing-only)
-- GET /api/jobs and /api/jobs/:id (owner only)
-- PATCH /api/matches/:id: revision plus isSaved and/or status
-- GET /api/candidates and /api/runs (owner only, latest 100)
+Set all secrets in that service's environment settings, not in source:
 
-The existing website query/filter names are preserved. Writes target the exact
-match and reject stale revisions with HTTP 409. A bookmark never replaces a stage.
-Opening an employer link never marks the job applied.
+- `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, existing `OWNER_USER_ID`.
+- `AUTH_MODE=owner`, `HOST=0.0.0.0`; the host supplies `PORT`.
+- `WEBSITE_ORIGINS` as a comma-separated list of exact allowed website origins.
+- `TAVILY_API_KEY` and either `GEMINI_API_KEY` or `GROQ_API_KEY`.
+- Optional `FIRECRAWL_API_KEY`, used only after free extraction fails.
+- `COLLECTOR_ENABLED=true`, `OLD_COLLECTOR_DISABLED=true` once the old collector
+  is stopped. `COLLECTOR_WRITE=true` publishes shortlisted jobs; false previews.
+- Schedule and budgets from `.env.example`. Default: 09:00 Asia/Kolkata.
 
-For local Android use, reverse **both** ports if opening the website too:
-`adb reverse tcp:3001 tcp:3001` for the native app, and port 3000 for the website.
-Rebuild the APK before expecting SecureStore and the new UI in an installed binary.
-No APK installation is performed by this change.
+Use **one worker/process and one service instance**. Collection runs in a worker
+thread so API requests remain available. A Supabase lease also prevents overlap
+with other collector processes. Use a host that stays awake: a sleeping service
+cannot execute its schedule. There is no separate cron service to deploy.
 
-## Verification and database operations
+After hosting, set website `BACKEND_URL=https://<your-api-host>` and
+`AUTH_MODE=owner`. Set mobile `EXPO_PUBLIC_API_URL` to that HTTPS origin and
+`EXPO_PUBLIC_AUTH_MODE=owner`, then rebuild/install it. Existing owner sign-in
+and SecureStore support are retained. The current APK still uses localhost until
+rebuilt with your real hosted address. No Supabase secret belongs in either client.
 
-`pnpm --dir backend test` uses Fastify injection without opening ports.
-`pnpm --dir backend exec node --env-file=.env --import tsx scripts/check-persistence.ts`
-checks live ingestion/status behavior and removes its temporary record in finally.
-`pnpm --dir backend backup` creates a permission-restricted, checksummed JSON backup.
-Keep backups private. Restoring requires jobs first, then matches, then workspace
-state, preserving IDs; do not restore over newer application changes.
+## Discovery and recovery
 
-Database SQL lives in database/. Operational tables have RLS enabled with no
-anonymous/authenticated access. Ingestion updates score/listing fields atomically
-without replacing IDs, first-seen timestamps or application state.
-The stale-revision SQLSTATE is PT409, not 40001: PostgREST retries serialization
-failures, so 40001 can hang an intentional conflict.
+```text
+schedule / authenticated API request
+  → plan (LangChain Gemini/Groq + rotating role queries)
+  → discover (Tavily, Remotive, WWR, learned employer boards)
+  → process one job → full JD → evidence validation → score → Supabase
+                       ↖ repeat until run limit ↵
+```
 
-Supabase remains the sole database. Render configuration, hosting, remotes, and
-source publishing are intentionally excluded.
+Employer APIs: Greenhouse, Lever and Ashby. Extraction: API → JSON-LD/HTML →
+optional Firecrawl. The Python service deliberately does not install a browser;
+JS-only pages can use Firecrawl or remain deferred. Robots rules, public-only
+DNS resolution at connection time, redirect validation, response limits, request
+timeouts and per-host pacing apply to direct extraction. JD content is untrusted
+model input; the model receives no credentials or tools.
 
-## Security advisor review
+Skills 60%, role 25%, experience 15%; no project-evidence scoring. Mandatory
+restrictions reject a role; unclear eligibility remains reviewable. Credit
+reservations are atomic in Supabase and failed calls count toward budgets.
 
-Operational and personal tables intentionally have no client RLS policies: access
-is server-only and anonymous/authenticated table grants are revoked. The advisor
-reports these as informational, consistent with deny-by-default. Existing project
-warnings remain for the legacy set_updated_at search path and disabled leaked-password
-protection. Review these before future public hosting:
-https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
-https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+LangGraph checkpoints persist in the existing private `collector_runs.checkpoint`
+column, including pending writes. Only bounded JSON state is stored, never pickle.
+Each candidate is its own graph step. Interrupted Python runs resume automatically
+on service startup when scheduling is enabled; expired leases may delay recovery
+up to two hours after an abrupt kill. A graceful shutdown releases the lease.
+Legacy Node/V8 checkpoints are preserved but cannot resume in Python.
 
-## Current local no-login mode
+Candidates and analysis are reused for three days; changed JDs are rescored.
+Ingestion preserves exact match IDs, first-seen timestamps, bookmarks and application
+status. Cached preview shortlists can be published by a subsequent write run.
 
-The owner deferred authentication. `AUTH_MODE=local` is configured for backend
-and website. The backend remains bound to loopback and validates connection IP,
-Host and browser origins. Website matches, Saved and Applied tracking need no login.
-Mobile uses the personal backend automatically for loopback URLs (port 3001);
-public browsing with a future hosted URL still uses the protected/public split.
-Sign-in code is retained for later: use AUTH_MODE=owner in backend and website
-and EXPO_PUBLIC_AUTH_MODE=owner in mobile when ready. No public unauthenticated
-private endpoint is authorized. Earlier owner-sign-in setup instructions apply
-only when that mode is enabled. Existing owner account/data are preserved.
+Manual CLI (scheduler need not be enabled):
+
+```sh
+pnpm collect:preview
+pnpm collect
+uv run --directory backend python -m job_radar.cli --resume <python-run-uuid> --write
+```
+
+Authenticated API: `POST /api/collector/runs` with `{"write":true}` or
+`{"write":false,"resumeRunId":"<python-run-uuid>"}` returns HTTP 202 and a run ID.
+Use `GET /api/runs` and `/api/candidates` to follow progress. Local mode allows
+these only over loopback. Private endpoints require an owner Supabase access token
+in public mode. Opening an employer application page never marks a job Applied;
+that remains an explicit tracking action.
+
+## Verification
+
+```sh
+uv run --directory backend pytest
+uv run --directory backend ruff check job_radar tests_python
+```
+
+Existing `database/*.sql` records already-applied Supabase schema/functions. No
+new database or migration is needed for this Python conversion. The SQL is part
+of Supabase, not another storage service. Keep the paused legacy Supabase cron
+and old systemd collector timer disabled. Do not run both collectors.

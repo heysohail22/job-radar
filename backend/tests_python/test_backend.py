@@ -13,7 +13,7 @@ from job_radar.database import Database, ApiError
 from job_radar.analysis import Analysis, validate_evidence, score
 from job_radar.checkpoint import SupabaseSaver
 from job_radar.graph import build_graph
-from job_radar.network import canonical_url, public_address
+from job_radar.network import canonical_url, public_address, PublicResolver
 from job_radar.extract import extract_html, complete_description
 
 ID = str(uuid4())
@@ -311,7 +311,7 @@ def test_langgraph_checkpoint_resumes_without_repeating_discovery(monkeypatch):
     def interrupted():
         nonlocal count
         count += 1
-        if count == 5:
+        if count == 8:
             raise InterruptedError("simulated restart")
 
     saver = SupabaseSaver(db, run)
@@ -338,3 +338,43 @@ def test_langgraph_checkpoint_resumes_without_repeating_discovery(monkeypatch):
     assert searches == ["python jobs"]
     assert final["summary"]["processed"] == 2
     assert all(r["status"] == "shortlisted" for r in db.tables["collector_candidates"])
+
+
+def test_runtime_lease_prevents_overlap_and_write_guard(monkeypatch):
+    from job_radar.runtime import CollectorRuntime
+    from job_radar import runtime as module
+
+    monkeypatch.setattr(module, "available_models", lambda s: [object()])
+    s = Settings(
+        _env_file=None, auth_mode="local", tavily_api_key="test", old_collector_disabled=False
+    )
+    db = FakeDb(s)
+    runtime = CollectorRuntime(db)
+    with pytest.raises(ApiError) as e:
+        runtime._prepare(True)
+    assert e.value.status == 409
+    original_rpc = db.rpc
+    db.rpc = lambda name, args: False if name == "collector_acquire" else original_rpc(name, args)
+    with pytest.raises(ApiError) as e:
+        runtime._prepare(False)
+    assert e.value.status == 409 and not db.tables["collector_runs"]
+
+
+def test_source_connection_rejects_dns_rebinding(monkeypatch):
+    import asyncio
+    from aiohttp.resolver import ThreadedResolver
+
+    async def resolve(self, host, port=0, family=0):
+        return [{"host": "127.0.0.1"}]
+
+    monkeypatch.setattr(ThreadedResolver, "resolve", resolve)
+
+    async def check():
+        resolver = PublicResolver()
+        try:
+            with pytest.raises(ValueError):
+                await resolver.resolve("public-looking.example", 443)
+        finally:
+            await resolver.close()
+
+    asyncio.run(check())

@@ -30,9 +30,7 @@ class Store:
     def save_candidates(self, items):
         rows = list(
             {
-                r["url"]: {
-                    k: v for k, v in r.items() if k in ("url", "title", "company") and v is not None
-                }
+                r["url"]: dict(url=r["url"], title=r.get("title"), company=r.get("company"))
                 for r in items
             }.values()
         )

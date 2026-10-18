@@ -60,10 +60,21 @@ class SupabaseSaver(BaseCheckpointSaver):
             self.data["entries"][cid] = {
                 "checkpoint": deepcopy(checkpoint),
                 "metadata": deepcopy(metadata),
-                "parent": deepcopy(config) if parent_id else None,
+                "parent": {
+                    "configurable": {
+                        "thread_id": self.run_id,
+                        "checkpoint_ns": "",
+                        "checkpoint_id": parent_id,
+                    }
+                }
+                if parent_id
+                else None,
                 "writes": {},
             }
             self.data["latest"] = cid
+            self.data["entries"] = {
+                key: value for key, value in self.data["entries"].items() if key in (cid, parent_id)
+            }
             self._save()
             return {
                 "configurable": {
@@ -84,6 +95,8 @@ class SupabaseSaver(BaseCheckpointSaver):
                 entry["writes"][key] = {
                     "task": task_id,
                     "channel": channel,
-                    "value": deepcopy(value),
+                    "value": "Interrupted task; retry from checkpoint."
+                    if isinstance(value, BaseException)
+                    else deepcopy(value),
                 }
             self._save()

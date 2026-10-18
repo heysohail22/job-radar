@@ -1,4 +1,5 @@
 from hashlib import sha256
+from datetime import datetime, timezone
 import re
 from typing import TypedDict
 from langgraph.graph import StateGraph, START, END
@@ -139,7 +140,16 @@ def build_graph(store, write, saver, guard=lambda: None, source=None, planner=No
                     description=c["description"],
                     method=c.get("extraction_method") or "cached",
                 )
-                if c.get("description") and complete_description(c["description"])
+                if c.get("description")
+                and complete_description(c["description"])
+                and (
+                    not c.get("updated_at")
+                    or (
+                        datetime.now(timezone.utc)
+                        - datetime.fromisoformat(c["updated_at"].replace("Z", "+00:00"))
+                    ).total_seconds()
+                    < 3 * 86400
+                )
                 else extract(
                     c["url"],
                     source,

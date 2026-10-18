@@ -61,3 +61,7 @@ build/
 .local/
 backups/
 collector/.cache/
+
+# Python tooling caches
+.pytest_cache/
+.ruff_cache/

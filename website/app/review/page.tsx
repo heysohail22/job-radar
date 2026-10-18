@@ -28,7 +28,7 @@ export default async function Review() {
       <h2>Recent runs</h2>
       {!runs.length && (
         <p>
-          No runs recorded yet. Configure collector/.env and run pnpm
+          No runs recorded yet. Configure backend/.env and run pnpm
           collect:preview.
         </p>
       )}
