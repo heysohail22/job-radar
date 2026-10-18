@@ -27,12 +27,10 @@ try {
   try {
     if (resumeIndex < 0)
       await store.checked(
-        store.db
-          .from("collector_runs")
-          .insert({
-            id: runId,
-            summary: { mode: write ? "write" : "preview" },
-          }),
+        store.db.from("collector_runs").insert({
+          id: runId,
+          summary: { mode: write ? "write" : "preview" },
+        }),
       );
     else {
       const old = await store.checked(

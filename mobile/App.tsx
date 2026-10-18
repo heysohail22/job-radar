@@ -143,6 +143,13 @@ function AppContent() {
   const generation = useRef(0),
     mutationLock = useRef(false);
   useEffect(() => {
+    if (!signedIn) {
+      generation.current++;
+      setDetail(undefined);
+      setFeed(undefined);
+    }
+  }, [signedIn]);
+  useEffect(() => {
     AsyncStorage.getItem("job-radar-theme")
       .then((value) => {
         if (value === "light" || value === "dark" || value === "system")
@@ -524,7 +531,7 @@ function AppContent() {
             {detail.matchId &&
               section("Application progress", title(detail.status))}
             {detail.matchId &&
-              detail.status !== "applied" &&
+              ["new", "reviewed"].includes(detail.status) &&
               button(
                 "Mark as applied",
                 () => void update(detail, { status: "applied" }),

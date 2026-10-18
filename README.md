@@ -19,3 +19,12 @@ pnpm check:db
 ```
 
 You can also run website commands directly, such as `pnpm --dir website dev`. Start the mobile development tools with `pnpm --dir mobile start`; see its README for USB/simulator setup. The server remains bound to localhost. No hosting or publishing configuration is added.
+
+## Local backend and automatic discovery
+
+See [backend setup](backend/README.md) and [collector setup](collector/README.md).
+Run `pnpm backend` and `pnpm dev` in separate terminals. Use `pnpm collect:preview`
+before `pnpm collect`. Replacement search/model API keys are required; credentials
+shared in chat are not used. Initial owner access is in ignored `.local/owner-access.txt`.
+The collector timer is prepared but not enabled until configuration and preview succeed.
+No Render service, deployment or source publishing is part of this implementation.

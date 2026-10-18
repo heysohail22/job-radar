@@ -76,7 +76,7 @@ export async function update(db: Database, id: string, change: Mutation) {
     p_status: change.status ?? null,
   });
   if (error) {
-    if (error.code === "40001")
+    if (["40001", "PT409"].includes(error.code))
       throw new AppError("This job changed. Refresh and try again.", 409);
     if (error.code === "P0002") throw new AppError("Match not found.", 404);
     throw new AppError("The update could not be saved.", 502);

@@ -43,6 +43,13 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
       let discovered = 0;
       async function accept(results: Discovery[]) {
         for (const item of results) {
+          if (
+            /^(?:accountant|recruiter|sales representative|registered nurse|truck driver|customer support representative)\b/i.test(
+              item.title ?? "",
+            )
+          )
+            continue;
+
           let url: string;
           try {
             url = canonicalUrl(item.url);
@@ -117,10 +124,33 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
       const max = Number(process.env.MAX_CANDIDATES ?? 100);
       if (!Number.isInteger(max) || max < 1 || max > 500)
         throw new Error("MAX_CANDIDATES must be between 1 and 500.");
-      const candidates = await store.candidates(500);
+      const candidates = await store.candidates(500, write);
       for (const c of candidates) {
         if (summary.processed >= max) break;
         const age = Date.now() - new Date(c.updated_at ?? 0).getTime();
+        if (
+          write &&
+          c.status === "shortlisted" &&
+          !c.published_at &&
+          c.analysis &&
+          c.description &&
+          c.profile_version === "skills-v2"
+        ) {
+          await store.publish(
+            {
+              url: c.canonical_url ?? c.url,
+              description: c.description,
+              method: c.extraction_method ?? "cached",
+            },
+            c.analysis,
+          );
+          await store.updateCandidate(c.id, {
+            published_at: new Date().toISOString(),
+          });
+          summary.processed++;
+          summary.published++;
+          continue;
+        }
         if (
           c.status !== "pending" &&
           age < (c.status === "deferred" ? 86400000 : 3 * 86400000)
@@ -176,9 +206,18 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
         }
         const result = score(analysis);
         // Publish before marking complete, so interrupted writes can safely retry.
-        if (write && result.status === "shortlisted") {
-          await store.publish({ ...extracted, description }, analysis);
-          summary.published++;
+        if (write) {
+          const existing = await store.checked(
+            store.db
+              .from("jobs")
+              .select("id")
+              .eq("canonical_url", extracted.url)
+              .maybeSingle(),
+          );
+          if (result.status === "shortlisted" || existing) {
+            await store.publish({ ...extracted, description }, analysis);
+            summary.published++;
+          }
         }
         await store.updateCandidate(c.id, {
           title: analysis.title,
@@ -191,6 +230,10 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
           content_hash: hash,
           profile_version: "skills-v2",
           extraction_method: extracted.method,
+          canonical_url: extracted.url,
+          ...(write && result.status === "shortlisted"
+            ? { published_at: new Date().toISOString() }
+            : {}),
           attempts: c.attempts + 1,
         });
         if (result.status === "uncertain") summary.uncertain++;

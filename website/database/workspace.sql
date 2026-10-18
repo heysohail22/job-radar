@@ -47,6 +47,7 @@ begin
     and (p_min_score=0 or b.total_score>=p_min_score)
     and (p_location='' or position(lower(p_location) in lower(coalesce(b.location_text,'')))>0)
     and (p_search='' or position(lower(p_search) in lower(concat_ws(' ',b.company,b.title,b.location_text,array_to_string(b.required_skills,' '))))>0)
+    and (p_view<>'discover' or (b.total_score>=60 and b.eligible_from_india='yes' and b.posting_status<>'closed') or b.is_saved or b.application_status in ('applied','interview','offer','rejected','withdrawn'))
     and (p_view<>'saved' or b.is_saved)
     and (p_view<>'applications' or b.application_status in ('applied','interview','offer','rejected','withdrawn'))
     and (p_stage='all' or b.application_status=p_stage)
@@ -86,7 +87,7 @@ begin
   if not found then raise exception 'Match not found' using errcode='P0002'; end if;
   select * into current_state from public.job_workspace_state where match_id=p_match_id;
   if coalesce(current_state.revision,0)<>p_revision then
-    raise exception 'State changed; refresh and try again' using errcode='40001';
+    raise exception 'State changed; refresh and try again' using errcode='PT409';
   end if;
   insert into public.job_workspace_state as s(match_id,is_saved,application_status,revision)
   values (p_match_id,coalesce(p_is_saved,original.application_status='saved'),

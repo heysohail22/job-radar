@@ -187,6 +187,7 @@ export async function extract(
         serviceWorkers: "block",
         acceptDownloads: false,
       });
+      await context.routeWebSocket("**/*", (socket) => socket.close());
       await context.route("**/*", async (route) => {
         try {
           if (

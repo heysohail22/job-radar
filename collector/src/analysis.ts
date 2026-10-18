@@ -45,6 +45,15 @@ export function validateEvidence(
 ) {
   const norm = (v: string) => v.toLowerCase().replace(/\s+/g, " ").trim();
   const body = norm(description);
+  for (const value of [
+    a.compensation,
+    a.experienceText,
+    ...a.degreeRequirements,
+  ]) {
+    if (value && !body.includes(norm(value)))
+      throw new Error("Extracted facts must be verbatim JD text.");
+  }
+  if (a.currency && !body.includes(norm(a.currency))) a.currency = null;
   const evidence = [...a.skills, ...a.responsibilities, ...a.mandatoryBlockers];
   for (const item of evidence)
     if (!body.includes(norm(item.evidence)))

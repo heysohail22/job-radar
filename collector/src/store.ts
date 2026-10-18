@@ -15,6 +15,9 @@ export type Candidate = {
   analysis?: Analysis;
   description?: string;
   updated_at?: string;
+  canonical_url?: string;
+  published_at?: string;
+  extraction_method?: string;
 };
 export class Store {
   readonly db = collectorDatabase();
@@ -56,11 +59,20 @@ export class Store {
         ),
     );
   }
-  async candidates(limit: number) {
+  async candidates(limit: number, write = false) {
+    const dayAgo = new Date(Date.now() - 86400000).toISOString();
+    const threeDaysAgo = new Date(Date.now() - 3 * 86400000).toISOString();
+    const ready = [
+      "status.eq.pending",
+      ...(write ? ["and(status.eq.shortlisted,published_at.is.null)"] : []),
+      `and(status.eq.deferred,updated_at.lt.${dayAgo})`,
+      `and(status.neq.pending,status.neq.deferred,updated_at.lt.${threeDaysAgo})`,
+    ].join(",");
     return (await this.checked(
       this.db
         .from("collector_candidates")
         .select("*")
+        .or(ready)
         .order("updated_at", { ascending: true })
         .limit(limit),
     )) as Candidate[];

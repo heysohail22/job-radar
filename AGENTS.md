@@ -92,3 +92,36 @@ For the personal installed Android app, use `pnpm --dir mobile build:android:lit
 ## Approved public mobile browsing — 16 October 2026
 
 The owner authorized no-login, direct Supabase listing reads from mobile. Discover and public job details call the HTTPS `job_radar_public_feed` security-invoker RPC using a publishable key. `website/database/mobile-public.sql` records the applied column grants and SELECT-only RLS policy. Only listing columns are public; raw collector data and all personal matching/tracking data remain protected. No public writes are authorized. Saved/Activity continue using the loopback API; their private data needs the paired computer connection. Public Discover sorts by recency or company, with no personal-score filters. This supersedes the earlier rule that all mobile reads use loopback. No secret key may be bundled.
+
+## Approved backend and discovery implementation — 18 October 2026
+
+The owner authorized the shared backend, automatic job discovery, single-owner
+Supabase email/password sign-in, and a complete backed-up reset of existing jobs
+and matches (including the 12 legacy Applied records). This supersedes the earlier
+no-Auth/no-crawler restrictions. No hosting, Render configuration, source publishing
+or deployment is authorized; the owner will host later.
+
+`backend/` is a localhost-only Fastify API on port 3001. `collector/` is a local
+LangGraph workflow with LangChain Groq/Gemini integrations. `packages/contracts/`
+owns pure shared types/validation/mapping. Website server queries call the backend;
+mobile uses the backend for signed-in personal reads/writes and retains public
+listing-only browsing when signed out. Owner identity is checked on every private
+request. Mobile sessions use SecureStore; authoritative jobs/tracking remain solely
+in Supabase. The mobile app requires a rebuilt binary for the new native module.
+
+API keys previously shared in chat must be revoked; replacement keys are entered
+only into ignored local environment files. Never copy those chat values into code.
+Operational collector tables are private with RLS and no client grants. The old
+`ai-job-radar-daily` Supabase schedule is paused during reset/replacement.
+
+Use `pnpm backend`, `pnpm collect:preview`, `pnpm collect`; daily timer installation
+is gated on configured replacement keys and a successful preview. No project-evidence
+scoring category: skills 60%, role/responsibilities 25%, experience 15%. Eligibility
+is separate. Keep unknowns for review; never invent missing fields. Ingestion must
+preserve match IDs, bookmarks, application status and first-seen timestamps.
+
+Stale tracking revisions use SQLSTATE PT409 (HTTP 409), not serialization_failure
+40001, because PostgREST retries the latter. `backend/database/` records the new SQL.
+Backups and generated owner credentials live under ignored `.local/` with restricted
+permissions; never publish them. Root checks cover website, mobile, backend and
+collector. No APK installation is implied by source implementation.

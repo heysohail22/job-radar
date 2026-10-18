@@ -283,6 +283,9 @@ function JobDetails({
             </div>
           </div>
           <h1>{job.title}</h1>
+          {applicationStages.includes(
+            job.status as (typeof applicationStages)[number],
+          ) && <p className="jr-stage-label">{label(job.status)}</p>}
           <div className="job-key-facts">
             <div>
               <Icon name="globe" />
@@ -434,7 +437,7 @@ function JobDetails({
             <ApplyLink job={job} />
             <SaveButton job={job} update={update} pending={pending} large />
           </div>
-          {job.matchId && job.status !== "applied" && (
+          {job.matchId && ["new", "reviewed"].includes(job.status) && (
             <button
               className="jr-btn jr-primary"
               disabled={pending}

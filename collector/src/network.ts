@@ -55,6 +55,7 @@ export function canonicalUrl(input: string) {
     if (/^(utm_|fbclid|gclid)/i.test(key)) u.searchParams.delete(key);
   return u.href;
 }
+const lastRequest = new Map<string, number>();
 const agent = new Agent({
   connect: {
     lookup: (hostname, options, callback) => {
@@ -82,6 +83,10 @@ export async function safeFetch(
 ): Promise<{ text: string; url: string; status: number; type: string }> {
   let url = canonicalUrl(input);
   for (let redirects = 0; redirects < 5; redirects++) {
+    const host = new URL(url).host;
+    const wait = Math.max(0, 750 - (Date.now() - (lastRequest.get(host) ?? 0)));
+    if (wait) await new Promise((resolve) => setTimeout(resolve, wait));
+    lastRequest.set(host, Date.now());
     const response = await httpFetch(url, {
       dispatcher: agent,
       redirect: "manual",

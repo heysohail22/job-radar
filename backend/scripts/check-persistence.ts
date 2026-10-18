@@ -69,7 +69,7 @@ try {
     p_revision: 0,
     p_status: "interview",
   });
-  assert.equal(conflict.error?.code, "40001");
+  assert.equal(conflict.error?.code, "PT409");
   const unsave = await db.rpc("job_radar_update_state", {
     p_match_id: m.data.id,
     p_profile: "skills-v2",

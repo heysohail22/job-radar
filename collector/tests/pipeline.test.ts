@@ -17,7 +17,7 @@ function analysis(): Analysis {
     employmentType: "contract",
     compensation: null,
     currency: null,
-    experienceText: "preferred",
+    experienceText: "Experience preferred.",
     minimumYears: null,
     experienceMandatory: false,
     experienceFit: "preferred-gap",

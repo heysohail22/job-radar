@@ -102,7 +102,7 @@ test("stale revision conflicts remain conflicts; internal errors are not exposed
     },
     rpc: async () => ({
       data: null,
-      error: { code: "40001", message: "private SQL" },
+      error: { code: "PT409", message: "private SQL" },
     }),
   } as unknown as Database;
   const app = buildApp({ db, ownerId: "owner" });

@@ -59,18 +59,16 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
         : code >= 400 && code < 500
           ? code
           : 500;
-    reply
-      .code(status)
-      .send({
-        error:
-          error instanceof AppError
-            ? error.message
-            : status === 429
-              ? "Too many requests. Try again shortly."
-              : status === 400
-                ? "Invalid request."
-                : "The request could not be completed.",
-      });
+    reply.code(status).send({
+      error:
+        error instanceof AppError
+          ? error.message
+          : status === 429
+            ? "Too many requests. Try again shortly."
+            : status === 400
+              ? "Invalid request."
+              : "The request could not be completed.",
+    });
   });
   app.get("/health", async () => ({ ok: true }));
   app.post(

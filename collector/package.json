@@ -21,7 +21,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "start": "node --env-file-if-exists=.env --import tsx src/cli.ts",
     "preview": "node --env-file-if-exists=.env --import tsx src/cli.ts --preview",
-    "collect": "node --env-file-if-exists=.env --import tsx src/cli.ts --write"
+    "collect": "node --env-file-if-exists=.env --import tsx src/cli.ts --write",
+    "schedule:install": "node --env-file=.env --import tsx scripts/install-schedule.ts"
   },
   "devDependencies": {
     "tsx": "4.23.15",

@@ -7,13 +7,7 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "noEmit": true,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*.ts",
-    "tests/**/*.ts",
-    "scripts/**/*.ts"
-  ]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.ts"]
 }
