@@ -1,3 +1,4 @@
+import { AccountBar } from "@/components/account-bar";
 import type { Metadata } from "next";
 import { appearanceScript } from "@/lib/appearance-script";
 import "@fontsource-variable/inter";
@@ -23,6 +24,7 @@ export default function RootLayout({
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
+        <AccountBar />
         {children}
       </body>
     </html>

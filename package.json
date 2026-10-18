@@ -8,11 +8,14 @@
     "dev": "pnpm --dir website dev",
     "build": "pnpm --dir website build",
     "start": "pnpm --dir website start",
-    "typecheck": "pnpm --dir website typecheck",
-    "test": "pnpm --dir website test",
+    "typecheck": "pnpm --dir website typecheck && pnpm --dir backend typecheck && pnpm --dir collector typecheck && pnpm --dir mobile typecheck",
+    "test": "pnpm --dir website test && pnpm --dir backend test && pnpm --dir collector test",
     "format": "pnpm --dir website format",
     "check:db": "pnpm --dir website check:db",
-    "lint": "eslint --config eslint.config.mjs website mobile"
+    "lint": "eslint --config eslint.config.mjs website mobile backend collector packages",
+    "backend": "pnpm --dir backend start",
+    "collect": "pnpm --dir collector collect",
+    "collect:preview": "pnpm --dir collector preview"
   },
   "devDependencies": {
     "eslint": "9.39.5",

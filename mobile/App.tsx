@@ -25,6 +25,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
+import * as SecureStore from "expo-secure-store";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
 import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
@@ -38,9 +39,18 @@ import type {
   Job,
   JobStatus,
   View as Page,
-} from "../website/lib/types";
-import { safeApplicationUrl } from "../website/lib/validation";
-import { ApiError, fetchFeed, fetchJob, mutateJob } from "./src/api";
+} from "@job-radar/contracts/types";
+import { safeApplicationUrl } from "@job-radar/contracts/validation";
+import {
+  ApiError,
+  fetchFeed,
+  fetchJob,
+  mutateJob,
+  configureSession,
+  login,
+  logout,
+  type Session,
+} from "./src/api";
 import {
   palettes,
   resolveTheme,
@@ -80,6 +90,42 @@ function AppContent() {
     Inter_700Bold,
   });
   const s = useMemo(() => styles(colors, fontsLoaded), [colors, fontsLoaded]);
+  const [authReady, setAuthReady] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  useEffect(() => {
+    let live = true;
+    const persist = async (value: Session | null) => {
+      if (value) {
+        await SecureStore.setItemAsync("jr-access", value.access_token);
+        await SecureStore.setItemAsync("jr-refresh", value.refresh_token);
+      } else {
+        await SecureStore.deleteItemAsync("jr-access");
+        await SecureStore.deleteItemAsync("jr-refresh");
+      }
+      if (live) setSignedIn(!!value);
+    };
+    Promise.all([
+      SecureStore.getItemAsync("jr-access"),
+      SecureStore.getItemAsync("jr-refresh"),
+    ])
+      .then(([access, refresh]) => {
+        const value =
+          access && refresh
+            ? { access_token: access, refresh_token: refresh }
+            : null;
+        configureSession(value, persist);
+        if (live) setSignedIn(!!value);
+      })
+      .catch(() => configureSession(null, persist))
+      .finally(() => {
+        if (live) setAuthReady(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
   const [page, setPage] = useState<Page>("discover");
   const [filters, setFilters] = useState(initialFilters);
   const [search, setSearch] = useState("");
@@ -90,9 +136,9 @@ function AppContent() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sheet, setSheet] = useState<"filters" | "theme" | "status" | null>(
-    null,
-  );
+  const [sheet, setSheet] = useState<
+    "filters" | "theme" | "status" | "account" | null
+  >(null);
   const [draft, setDraft] = useState(initialFilters);
   const generation = useRef(0),
     mutationLock = useRef(false);
@@ -110,11 +156,12 @@ function AppContent() {
       AsyncStorage.setItem("job-radar-theme", preference).catch(() => {});
   }, [preference, themeReady]);
   const load = useCallback(async () => {
+    if (!authReady) return;
     const id = ++generation.current;
     setLoading(true);
     setError("");
     try {
-      const result = await fetchFeed(page, filters);
+      const result = await fetchFeed(page, filters, signedIn);
       if (id === generation.current) setFeed(result);
     } catch (e) {
       if (id === generation.current)
@@ -122,7 +169,7 @@ function AppContent() {
     } finally {
       if (id === generation.current) setLoading(false);
     }
-  }, [page, filters]);
+  }, [page, filters, authReady, signedIn]);
   useEffect(() => {
     const requests = generation;
     setFeed(undefined);
@@ -314,7 +361,7 @@ function AppContent() {
           </Text>
           <Text style={s.link}>View role ↗</Text>
         </View>
-        {page === "applications" && (
+        {job.status !== "new" && job.status !== "reviewed" && (
           <Text style={s.tag}>{title(job.status)}</Text>
         )}
       </Pressable>
@@ -387,14 +434,18 @@ function AppContent() {
           <Text style={s.link}>{theme === "dark" ? "☾" : "☀"}</Text>
         </Pressable>
       </View>
-      {!detail && page !== "discover" && (
-        <View style={s.banner}>
-          <Text style={s.small}>
-            Saved jobs and application tracking use your private computer
-            connection. Discover works anywhere without it.
+      <View style={s.banner}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setSheet("account")}
+        >
+          <Text style={s.link}>
+            {signedIn
+              ? "Owner workspace · Account"
+              : "Sign in for scores, saved jobs and Applied tracking"}
           </Text>
-        </View>
-      )}
+        </Pressable>
+      </View>
       {notice !== "" && (
         <Pressable
           accessibilityRole="button"
@@ -465,13 +516,21 @@ function AppContent() {
             </Text>
             {!detail.matchId && (
               <Text style={s.muted}>
-                Job browsing works anywhere. Personal matches, saving, and
-                application tracking are available through your computer
-                connection.
+                Sign in to see personal matches, save jobs and track
+                applications. Local backend access requires your paired
+                computer.
               </Text>
             )}
             {detail.matchId &&
               section("Application progress", title(detail.status))}
+            {detail.matchId &&
+              detail.status !== "applied" &&
+              button(
+                "Mark as applied",
+                () => void update(detail, { status: "applied" }),
+                true,
+                busy,
+              )}
             {detail.matchId &&
               button(
                 "Update application progress",
@@ -735,6 +794,74 @@ function AppContent() {
                     setPreference(value as ThemePreference),
                   )}
                 </>
+              ) : sheet === "account" ? (
+                <View style={s.section}>
+                  <Text style={s.sectionTitle}>
+                    {signedIn ? "Your workspace" : "Owner sign-in"}
+                  </Text>
+                  {signedIn ? (
+                    button("Sign out", () => {
+                      void logout()
+                        .catch(() =>
+                          setNotice(
+                            "Signed out on this device. Remote session revocation could not be confirmed.",
+                          ),
+                        )
+                        .finally(() => {
+                          setFeed(undefined);
+                          setDetail(undefined);
+                          setSheet(null);
+                          setPage("discover");
+                        });
+                    })
+                  ) : (
+                    <>
+                      <TextInput
+                        accessibilityLabel="Email"
+                        style={s.input}
+                        placeholder="Email"
+                        placeholderTextColor={colors.muted}
+                        value={email}
+                        onChangeText={setEmail}
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        autoComplete="email"
+                      />
+                      <TextInput
+                        accessibilityLabel="Password"
+                        style={s.input}
+                        placeholder="Password"
+                        placeholderTextColor={colors.muted}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                        autoComplete="current-password"
+                      />
+                      {button(
+                        busy ? "Signing in…" : "Sign in",
+                        () => {
+                          setBusy(true);
+                          void login(email.trim(), password)
+                            .then(() => {
+                              setPassword("");
+                              setDetail(undefined);
+                              setFeed(undefined);
+                              setSheet(null);
+                            })
+                            .catch((e) =>
+                              Alert.alert(
+                                "Sign-in failed",
+                                e instanceof Error ? e.message : "Try again.",
+                              ),
+                            )
+                            .finally(() => setBusy(false));
+                        },
+                        true,
+                        busy,
+                      )}
+                    </>
+                  )}
+                </View>
               ) : sheet === "status" && detail ? (
                 <>
                   <Text style={s.muted}>{detail.title}</Text>

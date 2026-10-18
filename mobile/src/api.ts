@@ -4,8 +4,8 @@ import type {
   Job,
   Mutation,
   View,
-} from "../../website/lib/types";
-import { mapJob } from "../../website/lib/jobs";
+} from "@job-radar/contracts/types";
+import { mapJob } from "@job-radar/contracts/jobs";
 
 export class ApiError extends Error {
   constructor(
@@ -16,17 +16,22 @@ export class ApiError extends Error {
   }
 }
 export function apiOrigin(
-  value = process.env.EXPO_PUBLIC_API_URL ?? "http://127.0.0.1:3000",
+  value = process.env.EXPO_PUBLIC_API_URL ?? "http://127.0.0.1:3001",
 ) {
   const url = new URL(value);
   if (
-    !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) ||
-    url.protocol !== "http:" ||
     url.username ||
     url.password ||
-    url.pathname !== "/"
+    url.pathname !== "/" ||
+    !(
+      url.protocol === "https:" ||
+      (url.protocol === "http:" &&
+        ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))
+    )
   ) {
-    throw new Error("Use a local API URL, for example http://127.0.0.1:3000.");
+    throw new Error(
+      "Use HTTPS for hosted APIs or HTTP on localhost for local development.",
+    );
   }
   return url.origin;
 }
@@ -43,20 +48,96 @@ export function feedQuery(view: View, filters: Filters) {
     stage: filters.stage,
   }).toString();
 }
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const origin = apiOrigin();
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+export type Session = {
+  access_token: string;
+  refresh_token: string;
+  expires_at?: number;
+};
+let session: Session | null = null;
+let saveSession: (session: Session | null) => Promise<void> = async () => {};
+let refreshPromise: Promise<void> | null = null;
+export function configureSession(
+  value: Session | null,
+  persist: typeof saveSession,
+) {
+  session = value;
+  saveSession = persist;
+}
+export function hasSession() {
+  return session !== null;
+}
+export async function login(email: string, password: string) {
+  const value = await request<Session>(
+    "/api/auth/login",
+    { method: "POST", body: JSON.stringify({ email, password }) },
+    false,
+  );
+  await saveSession(value);
+  session = value;
+}
+export async function logout() {
   try {
-    const response = await fetch(`${origin}${path}`, {
+    if (session)
+      await request("/api/auth/logout", { method: "POST", body: "{}" });
+  } finally {
+    session = null;
+    await saveSession(null);
+  }
+}
+async function refreshSession() {
+  if (!refreshPromise)
+    refreshPromise = (async () => {
+      if (!session) throw new ApiError("Sign in to your workspace.", 401);
+      const value = await request<Session>(
+        "/api/auth/refresh",
+        {
+          method: "POST",
+          body: JSON.stringify({ refresh_token: session.refresh_token }),
+        },
+        false,
+      );
+      await saveSession(value);
+      session = value;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+  return refreshPromise;
+}
+async function request<T>(
+  path: string,
+  init: RequestInit = {},
+  authenticated = true,
+  retried = false,
+): Promise<T> {
+  if (authenticated && !session)
+    throw new ApiError(
+      "Sign in to view your saved jobs and application progress.",
+      401,
+    );
+  const controller = new AbortController(),
+    timer = setTimeout(() => controller.abort(), 70000);
+  try {
+    const response = await fetch(`${apiOrigin()}${path}`, {
       ...init,
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
-        Origin: origin,
-        ...init?.headers,
+        ...(authenticated && session
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {}),
+        ...init.headers,
       },
     });
+    if (response.status === 401 && authenticated && !retried) {
+      try {
+        await refreshSession();
+      } catch {
+        session = null;
+        await saveSession(null);
+        throw new ApiError("Your session expired. Sign in again.", 401);
+      }
+      return request<T>(path, init, true, true);
+    }
     const data = await response.json();
     if (!response.ok)
       throw new ApiError(
@@ -67,7 +148,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new Error(
-      "Cannot connect to your computer. Start AI Job Radar on your computer and reconnect your phone, then tap Retry.",
+      "Cannot connect to the backend. For local use, start pnpm backend and reverse port 3001 over ADB, then retry.",
     );
   } finally {
     clearTimeout(timer);
@@ -133,12 +214,17 @@ export async function fetchPublicFeed(
     clearTimeout(timer);
   }
 }
-export const fetchFeed = (view: View, filters: Filters) =>
-  view === "discover"
+export const fetchFeed = (
+  view: View,
+  filters: Filters,
+  personal = hasSession(),
+) =>
+  view === "discover" && !personal
     ? fetchPublicFeed(filters)
     : request<Feed>(`/api/jobs?${feedQuery(view, filters)}`);
 export const fetchJob = async (id: string, personal = false): Promise<Job> => {
-  if (personal) return request<Job>(`/api/jobs/${encodeURIComponent(id)}`);
+  if (personal || hasSession())
+    return request<Job>(`/api/jobs/${encodeURIComponent(id)}`);
   const feed = await fetchPublicFeed(
     {
       search: "",

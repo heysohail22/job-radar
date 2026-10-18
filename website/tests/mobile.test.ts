@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  configureSession,
   apiOrigin,
   fetchFeed,
   fetchJob,
@@ -8,12 +9,15 @@ import {
 import { resolveTheme } from "../../mobile/src/theme";
 import type { Job } from "../lib/types";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  configureSession(null, async () => {});
+});
 describe("mobile API boundary", () => {
-  it("keeps the privileged API on loopback", () => {
+  it("allows HTTPS backends while restricting plaintext to loopback", () => {
     expect(apiOrigin("http://127.0.0.1:3000")).toBe("http://127.0.0.1:3000");
+    expect(apiOrigin("https://example.com")).toBe("https://example.com");
     for (const url of [
-      "https://example.com",
       "http://192.168.1.2:3000",
       "http://secret@localhost:3000",
       "http://localhost:3000/api",
@@ -25,13 +29,17 @@ describe("mobile API boundary", () => {
       .fn()
       .mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal("fetch", fetcher);
+    configureSession(
+      { access_token: "test-token", refresh_token: "refresh" },
+      async () => {},
+    );
     await mutateJob({ matchId: "match-123", revision: 7 } as Job, {
       isSaved: false,
     });
     const [url, options] = fetcher.mock.calls[0];
     expect(url).toContain("/api/matches/match-123");
     expect(JSON.parse(options.body)).toEqual({ revision: 7, isSaved: false });
-    expect(options.headers.Origin).toBe("http://127.0.0.1:3000");
+    expect(options.headers.Authorization).toBe("Bearer test-token");
   });
   it("surfaces conflicts for refresh rather than treating them as success", async () => {
     vi.stubGlobal(
@@ -41,6 +49,10 @@ describe("mobile API boundary", () => {
         status: 409,
         json: async () => ({ error: "Refresh this job." }),
       }),
+    );
+    configureSession(
+      { access_token: "test-token", refresh_token: "refresh" },
+      async () => {},
     );
     await expect(
       mutateJob({ matchId: "match-123", revision: 7 } as Job, {
@@ -53,6 +65,10 @@ describe("mobile API boundary", () => {
       .fn()
       .mockResolvedValue({ ok: true, json: async () => ({ jobs: [] }) });
     vi.stubGlobal("fetch", fetcher);
+    configureSession(
+      { access_token: "test-token", refresh_token: "refresh" },
+      async () => {},
+    );
     await fetchFeed("saved", {
       search: "C++ & AI",
       mode: "remote",
@@ -127,16 +143,14 @@ describe("mobile API boundary", () => {
   it("returns a missing-job error for an unavailable public role", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue({
-          ok: true,
-          json: async () => ({
-            jobs: [],
-            total: 0,
-            summary: { total: 32, remote: 9, last_seen: null },
-          }),
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          jobs: [],
+          total: 0,
+          summary: { total: 32, remote: 9, last_seen: null },
         }),
+      }),
     );
     await expect(fetchJob("missing")).rejects.toMatchObject({ status: 404 });
   });

@@ -30,7 +30,8 @@
           }
         }
       ],
-      "./plugins/with-local-api.cjs"
+      "./plugins/with-local-api.cjs",
+      "expo-secure-store"
     ],
     "ios": {
       "supportsTablet": true

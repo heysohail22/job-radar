@@ -56,3 +56,8 @@ build/
 *.pem
 # Local Android build toolchain
 .local-tools/
+
+# Private backups, credentials and collection previews
+.local/
+backups/
+collector/.cache/

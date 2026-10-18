@@ -434,6 +434,15 @@ function JobDetails({
             <ApplyLink job={job} />
             <SaveButton job={job} update={update} pending={pending} large />
           </div>
+          {job.matchId && job.status !== "applied" && (
+            <button
+              className="jr-btn jr-primary"
+              disabled={pending}
+              onClick={() => void update(job, { status: "applied" })}
+            >
+              Mark as applied
+            </button>
+          )}
           <p className="jr-helper">
             Opens the employer’s application page. Update your status here after
             applying.
