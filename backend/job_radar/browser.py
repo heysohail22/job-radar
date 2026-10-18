@@ -47,7 +47,7 @@ async def render_page(url, source, timeout_seconds=35):
                         request.method != "GET"
                         or request.resource_type not in ("document", "script", "xhr", "fetch")
                         or request.is_navigation_request()
-                        and request.frame.parent_frame is not None
+                        and (request.frame.parent_frame is not None or request.frame.page != page)
                     ):
                         await route.abort()
                         return

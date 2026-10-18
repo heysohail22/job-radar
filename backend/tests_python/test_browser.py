@@ -97,6 +97,8 @@ def test_real_chromium_renders_js_and_blocks_private_requests():
     script = """<main><h1>Python developer</h1><div id="job-description"></div></main>
     <script>
     fetch('http://127.0.0.1/private');
+    fetch('https://jobs.example.com/submit', {method: 'POST', body: 'blocked'});
+    new WebSocket('wss://jobs.example.com/socket');
     setTimeout(() => document.querySelector('#job-description').textContent = %s, 50);
     </script>"""
     import json

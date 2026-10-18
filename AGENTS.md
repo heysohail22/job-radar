@@ -197,3 +197,9 @@ headless shell and OS libraries. Preserve Chromium sandboxing, public-only DNS
 fetch routing, GET-only requests, robots checks and bounded rendering. Browser
 unavailability must safely defer/fall through without breaking collection.
 This supersedes the earlier statement that Python omits browser automation.
+
+Playwright verification: matching Chromium headless shell installed locally;
+ENABLE_BROWSER=true in the ignored backend environment. All 14 Python tests passed,
+including real sandboxed JS rendering and blocked private requests, POSTs and
+WebSockets. The local backend service was restarted successfully. The owner's
+COLLECTOR_ENABLED=false setting was preserved. No cloud deployment performed.
