@@ -113,3 +113,12 @@ Existing `database/*.sql` records already-applied Supabase schema/functions. No
 new database or migration is needed for this Python conversion. The SQL is part
 of Supabase, not another storage service. Keep the paused legacy Supabase cron
 and old systemd collector timer disabled. Do not run both collectors.
+
+## This machine after migration
+
+The unified `job-radar-backend.service` is enabled under the user session. It runs
+the loopback API and scheduler together; the old collector timer is disabled.
+Use `systemctl --user restart job-radar-backend.service` after backend source or
+configuration changes. Do not also run `pnpm backend` while this service is active.
+For a fresh local installation, `pnpm backend:install-service` installs the service;
+configure `backend/.env` first. This is local process management, not cloud hosting.

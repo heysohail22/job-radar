@@ -139,3 +139,51 @@ The local collector timer is enabled after the live preview on 18 October 2026:
 09:00 Asia/Kolkata, with persistent catch-up. Native Discover can fall back to
 public listing reads if the paired backend is unreachable; private data/writes
 always require that local connection in local mode.
+
+## Unified Python service — 18 October 2026
+
+The owner explicitly requested replacing the separate TypeScript API/collector
+with **one Python backend folder and one deployable service**. This supersedes
+all earlier Fastify/separate-collector and no-FastAPI architecture instructions.
+`backend/job_radar/` contains FastAPI, LangChain Gemini/Groq integrations,
+LangGraph, source discovery/extraction, scoring, Supabase access, persistent JSON
+checkpoints and the in-process daily scheduler. All server secrets are consolidated
+in ignored `backend/.env`; process environment overrides it on a host. No Firebase,
+SQLite, Redis or second database is introduced. Existing Supabase tables and RPCs
+are reused without schema changes. Preserve tracking and existing API contracts.
+
+Root `pnpm backend`, `pnpm collect:preview`, `pnpm collect` invoke Python through uv.
+Use Python 3.12, `uv sync --project backend --frozen`. `backend/uv.lock` locks all
+Python dependencies; Docker installs hashed `requirements.txt` from this folder.
+`pnpm backend:test` runs behavioral tests; `pnpm backend:lint` runs Ruff. Root tests
+and lint cover Python plus the clients. Website/mobile TypeScript remains intact.
+
+Run exactly one API worker and one service instance. Background collection runs
+outside the request event loop; Supabase leases prevent overlap, credit reservation
+RPCs enforce budgets, and checkpoints persist after each candidate. JSON-only
+Python checkpoints cannot resume old Node/V8 runs. Old operational records remain
+preserved. Direct extraction uses public-only DNS resolution, response limits,
+robots checks and pacing; browser automation is omitted in Python, with optional
+Firecrawl as fallback. Never bypass these protections.
+
+Local use remains AUTH_MODE=local on loopback only. Public-ready code supports
+HOST=0.0.0.0 only with AUTH_MODE=owner and the existing owner identity. The user
+has not authorized deployment or source publishing. Do not configure a hosting
+account or publish a service. The Dockerfile and instructions are reviewable local
+artifacts only. Hosted clients will require the real HTTPS API URL and owner mode;
+the current APK is unchanged and still uses localhost through ADB.
+
+The old `job-radar-collector.timer` was disabled during migration. A unified local
+`job-radar-backend.service` can be installed with `pnpm backend:install-service`
+to keep the loopback API and daily scheduler together under the user session.
+The old TypeScript service sources/configuration are backed up privately under
+`.local/backups/typescript-services-before-python-2026-10-18.tar.gz` (mode 0600).
+Do not restore the old collector timer alongside the new scheduler.
+
+Migration verification: the unified user service is installed, enabled and active
+locally; COLLECTOR_ENABLED=true, next regular slot 19 October 2026 09:00 IST.
+The startup catch-up run for 18 October began after the successful bounded Python
+preview. The legacy timer is disabled. A temporary live Supabase fixture verified
+Applied/bookmark persistence, collector re-ingestion and website API reload; it
+was removed. Website production build, client type checks, lint, 27 website tests
+and eight Python behavioral tests passed. No public deployment was performed.

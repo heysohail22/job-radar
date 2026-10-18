@@ -89,7 +89,12 @@ Keep up to three years as stretch opportunities, not mandatoryBlockers. Explicit
 Distinguish required vs preferred experience. Unknown posting status uses empty evidence. Never infer open from a page merely being accessible."""
 
 
+class EvidenceError(ValueError):
+    """The provider returned analysis, but local evidence checks rejected it."""
+
+
 def analyze(description, s):
+    validation_failed = False
     for model in available_models(s):
         messages = [
             ("system", SYSTEM),
@@ -100,6 +105,7 @@ def analyze(description, s):
                 result = model.with_structured_output(Analysis).invoke(messages)
                 return validate_evidence(Analysis.model_validate(result), description)
             except ValueError as exc:
+                validation_failed = True
                 if attempt == 0:
                     messages.append(
                         (
@@ -111,4 +117,6 @@ def analyze(description, s):
                 break
             except Exception:
                 break
-    raise ValueError("Model unavailable or analysis failed evidence validation; retry later.")
+    if validation_failed:
+        raise EvidenceError("Analysis failed local evidence validation; retry later.")
+    raise ValueError("Model provider unavailable; retry later.")

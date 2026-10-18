@@ -183,7 +183,7 @@ def build_graph(store, write, saver, guard=lambda: None, source=None, planner=No
                 and c.get("analysis")
                 else analyzer(description, s)
             )
-        except Exception:
+        except Exception as error:
             store.update_candidate(
                 c["id"],
                 dict(
@@ -197,6 +197,8 @@ def build_graph(store, write, saver, guard=lambda: None, source=None, planner=No
                 ),
             )
             summary["deferred"] += 1
+            if isinstance(error, models.EvidenceError):
+                return result
             # Pause safely instead of consuming quota on all remaining candidates.
             return {
                 **result,
