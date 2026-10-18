@@ -156,6 +156,7 @@ def build_graph(store, write, saver, guard=lambda: None, source=None, planner=No
                     (lambda url: discovery.firecrawl(url, store))
                     if s.firecrawl_api_key.get_secret_value()
                     else None,
+                    enable_browser=s.enable_browser,
                 )
             )
         except Exception:

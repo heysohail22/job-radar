@@ -165,7 +165,7 @@ def direct_api(url, source):
     return None
 
 
-def extract(url, source, fallback=None):
+def extract(url, source, fallback=None, *, enable_browser=False):
     url = canonical_url(url)
     p = urlsplit(url)
     if (
@@ -193,6 +193,19 @@ def extract(url, source, fallback=None):
             return result
     except Exception:
         pass
+    if enable_browser:
+        try:
+            from .browser import render
+
+            page = render(url, source)
+            source.assert_robots(page["url"])
+            result = extract_html(page["text"], page["url"])
+            if complete_description(result["description"]):
+                return {**result, "method": "playwright"}
+        except Exception:
+            # Missing Chromium, sandbox restrictions or incomplete rendering must
+            # never stop the collector or bypass its normal paid fallback budget.
+            pass
     if fallback:
         text = fallback(url)
         if complete_description(text):

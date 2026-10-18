@@ -66,8 +66,12 @@ schedule / authenticated API request
 ```
 
 Employer APIs: Greenhouse, Lever and Ashby. Extraction: API → JSON-LD/HTML →
-optional Firecrawl. The Python service deliberately does not install a browser;
-JS-only pages can use Firecrawl or remain deferred. Robots rules, public-only
+optional Playwright Chromium → optional Firecrawl. Set `ENABLE_BROWSER=true` to
+use browser rendering. The Dockerfile installs the matching headless Chromium
+and OS dependencies. For a native Python host or local machine, run
+`uv run --directory backend python -m playwright install --with-deps --only-shell chromium`
+first (OS dependencies may require sudo). Browser failure safely falls through
+to Firecrawl or leaves the candidate deferred. Robots rules, public-only
 DNS resolution at connection time, redirect validation, response limits, request
 timeouts and per-host pacing apply to direct extraction. JD content is untrusted
 model input; the model receives no credentials or tools.
@@ -122,3 +126,14 @@ Use `systemctl --user restart job-radar-backend.service` after backend source or
 configuration changes. Do not also run `pnpm backend` while this service is active.
 For a fresh local installation, `pnpm backend:install-service` installs the service;
 configure `backend/.env` first. This is local process management, not cloud hosting.
+
+Browser extraction uses one Chromium instance/page at a time and a 35-second
+render deadline, a 60-request/10 MB traffic budget and a 2 MB rendered-page cap.
+All browser HTTP requests use the DNS-validated public fetcher; only GET requests
+for documents/scripts/XHR/fetch are allowed. WebSockets, service workers, child
+frames, popups, downloads and form submissions are blocked. Chromium's sandbox
+remains enabled. A host that prohibits Chromium's OS sandbox will fall back to
+Firecrawl; do not disable the sandbox to work around that restriction.
+
+Real offline browser integration verification (requires Chromium):
+`RUN_BROWSER_TESTS=1 uv run --directory backend pytest tests_python/test_browser.py`.

@@ -187,3 +187,13 @@ preview. The legacy timer is disabled. A temporary live Supabase fixture verifie
 Applied/bookmark persistence, collector re-ingestion and website API reload; it
 was removed. Website production build, client type checks, lint, 27 website tests
 and eight Python behavioral tests passed. No public deployment was performed.
+
+## Optional Python browser extraction
+
+The owner authorized Playwright as a fallback before Firecrawl. Python Playwright
+is pinned with the backend dependencies. `ENABLE_BROWSER` defaults false; enable
+it only when matching Chromium is installed. The Dockerfile includes Chromium
+headless shell and OS libraries. Preserve Chromium sandboxing, public-only DNS
+fetch routing, GET-only requests, robots checks and bounded rendering. Browser
+unavailability must safely defer/fall through without breaking collection.
+This supersedes the earlier statement that Python omits browser automation.

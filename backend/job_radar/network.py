@@ -103,7 +103,12 @@ class SourceClient:
                         body.extend(chunk)
                         if len(body) > limit:
                             raise SourceError("Source body exceeds size limit.")
-                    return {"text": body.decode("utf-8", errors="replace"), "url": url}
+                    return {
+                        "text": body.decode("utf-8", errors="replace"),
+                        "body": bytes(body),
+                        "url": url,
+                        "type": response.headers.get("Content-Type", "text/html"),
+                    }
         raise SourceError("Too many redirects.")
 
     def assert_robots(self, url):

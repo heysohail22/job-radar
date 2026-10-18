@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     collector_minute: int = Field(default=0, ge=0, le=59)
     collector_write: bool = True
     old_collector_disabled: bool = False
+    enable_browser: bool = False
     max_queries: int = Field(default=20, ge=1, le=20)
     max_candidates: int = Field(default=100, ge=1, le=500)
     tavily_api_key: SecretStr = SecretStr("")
