@@ -7,6 +7,7 @@ const requirement = z.object({
   profileSkill: z.string().nullable(),
 });
 export const analysisSchema = z.object({
+  isSingleJob: z.boolean(),
   title: z.string().min(1),
   company: z.string().min(1),
   location: z.string().nullable(),
@@ -33,8 +34,8 @@ export const analysisSchema = z.object({
   degreeRequirements: z.array(z.string()),
   postingStatus: z.enum(["open", "closed", "uncertain"]),
   postingEvidence: z.string(),
-  skills: z.array(requirement).min(1),
-  responsibilities: z.array(requirement).min(1),
+  skills: z.array(requirement),
+  responsibilities: z.array(requirement),
   summary: z.string(),
 });
 export type Analysis = z.infer<typeof analysisSchema>;
@@ -45,6 +46,26 @@ export function validateEvidence(
 ) {
   const norm = (v: string) => v.toLowerCase().replace(/\s+/g, " ").trim();
   const body = norm(description);
+  if (
+    a.indiaEligibility === "unclear" &&
+    !body.includes(norm(a.eligibilityEvidence))
+  )
+    a.eligibilityEvidence = "";
+  if (
+    a.postingStatus === "uncertain" &&
+    !body.includes(norm(a.postingEvidence))
+  )
+    a.postingEvidence = "";
+  if (
+    a.experienceFit === "unknown" &&
+    a.minimumYears === null &&
+    !body.includes(norm(a.experienceEvidence))
+  )
+    a.experienceEvidence = "";
+  if (!a.isSingleJob)
+    throw new Error("Analysis contains a listing page, not one job.");
+  if (!a.skills.length || !a.responsibilities.length)
+    throw new Error("Analysis contains insufficient requirements to score.");
   for (const value of [
     a.compensation,
     a.experienceText,
@@ -58,15 +79,15 @@ export function validateEvidence(
   for (const item of evidence)
     if (!body.includes(norm(item.evidence)))
       throw new Error("Analysis contains unsupported JD evidence.");
-  for (const quote of [
-    a.eligibilityEvidence,
-    a.experienceEvidence,
-    a.postingEvidence,
-  ])
+  for (const field of [
+    "eligibilityEvidence",
+    "experienceEvidence",
+    "postingEvidence",
+  ] as const) {
+    const quote = a[field];
     if (quote && !body.includes(norm(quote)))
-      throw new Error(
-        "Analysis contains unsupported eligibility or experience evidence.",
-      );
+      throw new Error(`Analysis contains unsupported ${field}.`);
+  }
   for (const item of [...a.skills, ...a.responsibilities])
     if (
       ["matched", "transferable"].includes(item.fit) &&

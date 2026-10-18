@@ -63,8 +63,14 @@ export function configureSession(
   session = value;
   saveSession = persist;
 }
+export function localWorkspace() {
+  return (
+    process.env.EXPO_PUBLIC_AUTH_MODE !== "owner" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(new URL(apiOrigin()).hostname)
+  );
+}
 export function hasSession() {
-  return session !== null;
+  return session !== null || localWorkspace();
 }
 export async function login(email: string, password: string) {
   const value = await request<Session>(
@@ -109,7 +115,7 @@ async function request<T>(
   authenticated = true,
   retried = false,
 ): Promise<T> {
-  if (authenticated && !session)
+  if (authenticated && !session && !localWorkspace())
     throw new ApiError(
       "Sign in to view your saved jobs and application progress.",
       401,
@@ -128,7 +134,12 @@ async function request<T>(
         ...init.headers,
       },
     });
-    if (response.status === 401 && authenticated && !retried) {
+    if (
+      response.status === 401 &&
+      authenticated &&
+      !retried &&
+      !localWorkspace()
+    ) {
       try {
         await refreshSession();
       } catch {
@@ -214,17 +225,35 @@ export async function fetchPublicFeed(
     clearTimeout(timer);
   }
 }
-export const fetchFeed = (
+export const fetchFeed = async (
   view: View,
   filters: Filters,
   personal = hasSession(),
-) =>
-  view === "discover" && !personal
-    ? fetchPublicFeed(filters)
-    : request<Feed>(`/api/jobs?${feedQuery(view, filters)}`);
+): Promise<Feed> => {
+  if (view === "discover" && !personal && !localWorkspace())
+    return fetchPublicFeed(filters);
+  try {
+    return await request<Feed>(`/api/jobs?${feedQuery(view, filters)}`);
+  } catch (error) {
+    if (
+      view === "discover" &&
+      localWorkspace() &&
+      !session &&
+      !(error instanceof ApiError)
+    )
+      return fetchPublicFeed(filters);
+    throw error;
+  }
+};
 export const fetchJob = async (id: string, personal = false): Promise<Job> => {
-  if (personal || hasSession())
-    return request<Job>(`/api/jobs/${encodeURIComponent(id)}`);
+  if (personal || hasSession()) {
+    try {
+      return await request<Job>(`/api/jobs/${encodeURIComponent(id)}`);
+    } catch (error) {
+      if (personal || session || !localWorkspace() || error instanceof ApiError)
+        throw error;
+    }
+  }
   const feed = await fetchPublicFeed(
     {
       search: "",

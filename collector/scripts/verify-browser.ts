@@ -2,9 +2,12 @@ import { chromium } from "playwright";
 import { createClient } from "@supabase/supabase-js";
 import { readFile, mkdir } from "node:fs/promises";
 import assert from "node:assert/strict";
-const credentials = await readFile("../.local/owner-access.txt", "utf8");
-const email = /Owner email: (.*)/.exec(credentials)![1],
-  password = /Temporary password: (.*)/.exec(credentials)![1];
+const requireLogin = process.env.VERIFY_AUTH_MODE === "owner";
+const credentials = requireLogin
+  ? await readFile("../.local/owner-access.txt", "utf8")
+  : "";
+const email = /Owner email: (.*)/.exec(credentials)?.[1] ?? "",
+  password = /Temporary password: (.*)/.exec(credentials)?.[1] ?? "";
 const db = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SECRET_KEY!,
@@ -50,11 +53,13 @@ try {
   const page = await browser.newPage();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.name));
-  await page.goto("http://127.0.0.1:3000/login");
-  await page.getByLabel("Email", { exact: true }).fill(email);
-  await page.getByLabel("Password", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await page.waitForURL("http://127.0.0.1:3000/");
+  if (requireLogin) {
+    await page.goto("http://127.0.0.1:3000/login");
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.waitForURL("http://127.0.0.1:3000/");
+  }
   await page.goto("http://127.0.0.1:3000/jobs/" + jid);
   await page.setViewportSize({ width: 390, height: 844 });
   await page
@@ -89,28 +94,38 @@ try {
     ),
     true,
   );
-  const login = await fetch("http://127.0.0.1:3001/api/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-  });
-  assert.equal(login.status, 200);
-  const session = (await login.json()) as { access_token: string };
+  let token = "";
+  if (requireLogin) {
+    const login = await fetch("http://127.0.0.1:3001/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+    assert.equal(login.status, 200);
+    const session = (await login.json()) as { access_token: string };
+    token = session.access_token;
+  }
   const response = await fetch("http://127.0.0.1:3001/api/jobs/" + jid, {
-    headers: { Authorization: "Bearer " + session.access_token },
+    headers: token ? { Authorization: "Bearer " + token } : {},
   });
   assert.equal(response.status, 200);
   const job = (await response.json()) as { status: string };
   assert.equal(job.status, "applied");
-  await page.getByRole("button", { name: "Sign out", exact: true }).click();
-  await page.waitForURL("http://127.0.0.1:3000/");
-  assert.equal(
-    (await page.context().cookies()).some((c) => c.name === "jr-access"),
-    false,
-  );
+  if (requireLogin) {
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await page.waitForURL("http://127.0.0.1:3000/");
+    assert.equal(
+      (await page.context().cookies()).some((c) => c.name === "jr-access"),
+      false,
+    );
+  } else
+    assert.equal(
+      await page.getByRole("link", { name: /Sign in for/ }).count(),
+      0,
+    );
   assert.deepEqual(errors, []);
   console.log(
-    "Browser sign-in → Mark as applied → reload → mobile-contract API → sign-out verified; screenshots saved privately.",
+    "Browser access → Mark as applied → reload → shared mobile API verified; screenshots saved privately.",
   );
 } finally {
   await browser.close();

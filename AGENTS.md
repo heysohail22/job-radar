@@ -125,3 +125,17 @@ Stale tracking revisions use SQLSTATE PT409 (HTTP 409), not serialization_failur
 Backups and generated owner credentials live under ignored `.local/` with restricted
 permissions; never publish them. Root checks cover website, mobile, backend and
 collector. No APK installation is implied by source implementation.
+
+## Auth deferred — 18 October 2026
+
+The owner deferred sign-in until hosting. AUTH_MODE=local in backend and website
+allows the single personal workspace without login, exclusively on loopback.
+Backend validates connection IP, Host and browser origin; never expose this mode
+publicly or broaden binding. Mobile defaults to local workspace access only for
+loopback API URLs. Existing owner-auth code is retained for later opt-in with
+AUTH_MODE=owner and EXPO_PUBLIC_AUTH_MODE=owner. No accounts are deleted.
+
+The local collector timer is enabled after the live preview on 18 October 2026:
+09:00 Asia/Kolkata, with persistent catch-up. Native Discover can fall back to
+public listing reads if the paired backend is unreachable; private data/writes
+always require that local connection in local mode.

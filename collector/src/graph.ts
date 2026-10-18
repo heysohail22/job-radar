@@ -7,7 +7,7 @@ import {
 } from "@langchain/langgraph";
 import { createHash } from "node:crypto";
 import { canonicalUrl } from "./network";
-import { boardFromUrl, extract } from "./extract";
+import { boardFromUrl, extract, completeDescription } from "./extract";
 import { analyze, planQueries } from "./models";
 import {
   boardJobs,
@@ -27,7 +27,10 @@ const State = Annotation.Root({
 export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
   return new StateGraph(State)
     .addNode("plan", async () => ({
-      queries: await planQueries(),
+      queries: (await planQueries()).slice(
+        0,
+        Math.max(1, Math.min(20, Number(process.env.MAX_QUERIES ?? 20))),
+      ),
       summary: {
         discovered: 0,
         processed: 0,
@@ -42,6 +45,11 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
       const errors = [...state.errors];
       let discovered = 0;
       async function accept(results: Discovery[]) {
+        const rows: Discovery[] = [];
+        const boards = new Map<
+          string,
+          { id: string; provider: string; board: string }
+        >();
         for (const item of results) {
           if (
             /^(?:accountant|recruiter|sales representative|registered nurse|truck driver|customer support representative)\b/i.test(
@@ -56,19 +64,22 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
           } catch {
             continue;
           }
-          await store.saveCandidate(url, item.title, item.company);
+          rows.push({ ...item, url });
           const b = boardFromUrl(url);
           if (b)
-            await store.checked(
-              store.db
-                .from("collector_sources")
-                .upsert(
-                  { id: `${b.provider}:${b.board}`, ...b },
-                  { onConflict: "provider,board" },
-                ),
-            );
+            boards.set(`${b.provider}:${b.board}`, {
+              id: `${b.provider}:${b.board}`,
+              ...b,
+            });
           discovered++;
         }
+        await store.saveCandidates(rows);
+        if (boards.size)
+          await store.checked(
+            store.db
+              .from("collector_sources")
+              .upsert([...boards.values()], { onConflict: "provider,board" }),
+          );
       }
       for (const query of state.queries) {
         let results: Discovery[];
@@ -159,12 +170,21 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
         summary.processed++;
         let extracted;
         try {
-          extracted = await extract(
-            c.url,
-            process.env.FIRECRAWL_API_KEY
-              ? (url) => firecrawl(url, store)
-              : undefined,
-          );
+          extracted =
+            c.description &&
+            completeDescription(c.description) &&
+            age < 3 * 86400000
+              ? {
+                  url: c.canonical_url ?? c.url,
+                  description: c.description,
+                  method: c.extraction_method ?? "cached",
+                }
+              : await extract(
+                  c.url,
+                  process.env.FIRECRAWL_API_KEY
+                    ? (url) => firecrawl(url, store)
+                    : undefined,
+                );
         } catch {
           await store.updateCandidate(c.id, {
             status: "deferred",
@@ -190,14 +210,28 @@ export function buildGraph(store: Store, write: boolean, saver: MemorySaver) {
         ) {
           try {
             analysis = await analyze(description);
-          } catch {
+          } catch (error) {
             await store.updateCandidate(c.id, {
               status: "deferred",
               reason:
-                "Model unavailable or analysis failed validation; retry later.",
+                error instanceof Error &&
+                error.message.startsWith("Model analysis deferred:")
+                  ? error.message
+                  : "Model unavailable or analysis failed validation; retry later.",
+              description,
+              content_hash: hash,
+              canonical_url: extracted.url,
+              extraction_method: extracted.method,
               attempts: c.attempts + 1,
             });
             summary.deferred++;
+            if (
+              error instanceof Error &&
+              /Analysis contains|Analysis claims|Extracted facts|requires evidence/.test(
+                error.message,
+              )
+            )
+              continue;
             errors.push(
               "Model analysis paused; remaining candidates are queued.",
             );

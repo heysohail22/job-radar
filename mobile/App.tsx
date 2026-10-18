@@ -47,6 +47,7 @@ import {
   fetchJob,
   mutateJob,
   configureSession,
+  localWorkspace,
   login,
   logout,
   type Session,
@@ -95,6 +96,11 @@ function AppContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   useEffect(() => {
+    if (localWorkspace()) {
+      configureSession(null, async () => {});
+      setAuthReady(true);
+      return;
+    }
     let live = true;
     const persist = async (value: Session | null) => {
       if (value) {
@@ -143,7 +149,7 @@ function AppContent() {
   const generation = useRef(0),
     mutationLock = useRef(false);
   useEffect(() => {
-    if (!signedIn) {
+    if (!signedIn && !localWorkspace()) {
       generation.current++;
       setDetail(undefined);
       setFeed(undefined);
@@ -441,18 +447,20 @@ function AppContent() {
           <Text style={s.link}>{theme === "dark" ? "☾" : "☀"}</Text>
         </Pressable>
       </View>
-      <View style={s.banner}>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => setSheet("account")}
-        >
-          <Text style={s.link}>
-            {signedIn
-              ? "Owner workspace · Account"
-              : "Sign in for scores, saved jobs and Applied tracking"}
-          </Text>
-        </Pressable>
-      </View>
+      {!localWorkspace() && (
+        <View style={s.banner}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setSheet("account")}
+          >
+            <Text style={s.link}>
+              {signedIn
+                ? "Owner workspace · Account"
+                : "Sign in for scores, saved jobs and Applied tracking"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
       {notice !== "" && (
         <Pressable
           accessibilityRole="button"

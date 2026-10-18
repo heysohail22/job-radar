@@ -44,6 +44,10 @@ export async function backendRequest<T>(
     throw new AppError(body.error ?? "The request failed.", response.status);
   return body as T;
 }
+export function localWorkspace() {
+  return process.env.AUTH_MODE === "local";
+}
 export async function signedIn() {
+  if (localWorkspace()) return true;
   return !!(await cookies()).get("jr-access")?.value;
 }

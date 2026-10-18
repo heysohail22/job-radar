@@ -87,7 +87,7 @@ export const profile = {
 };
 export function seedQueries(day: number) {
   const start = (day * 7) % profile.roles.length;
-  return Array.from({ length: 16 }, (_, i) => {
+  const queries = Array.from({ length: 16 }, (_, i) => {
     const role = profile.roles[(start + i) % profile.roles.length];
     return i % 4 === 0
       ? `${role} Python jobs India`
@@ -102,4 +102,8 @@ export function seedQueries(day: number) {
     "voice agent API integration jobs India",
     "AI workflow automation developer hiring",
   ]);
+  queries[0] = `site:jobs.lever.co ${profile.roles[start]} India remote`;
+  queries[1] = `site:job-boards.greenhouse.io ${profile.roles[(start + 1) % profile.roles.length]} India`;
+  queries[2] = `site:jobs.ashbyhq.com ${profile.roles[(start + 2) % profile.roles.length]} remote`;
+  return queries;
 }

@@ -5,6 +5,7 @@ export async function proxy(request: NextRequest) {
       "This local website is available on localhost only.",
       { status: 403 },
     );
+  if (process.env.AUTH_MODE === "local") return NextResponse.next();
   const access = request.cookies.get("jr-access")?.value,
     refresh = request.cookies.get("jr-refresh")?.value;
   let exp = 0;

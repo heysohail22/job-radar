@@ -15,12 +15,17 @@ const store = new Store();
 const preview = await store.checked(
   store.db
     .from("collector_runs")
-    .select("id")
-    .eq("status", "completed")
+    .select("id,summary")
+    .in("status", ["completed", "partial"])
     .contains("summary", { mode: "preview" })
-    .limit(1),
+    .limit(20),
 );
-if (!preview?.length)
+if (
+  !preview?.some(
+    (run) =>
+      Number(run.summary.processed ?? 0) > Number(run.summary.deferred ?? 0),
+  )
+)
   throw new Error("Complete a successful preview before enabling the timer.");
 const pnpm = execFileSync("which", ["pnpm"], { encoding: "utf8" }).trim();
 const root = resolve(".."),

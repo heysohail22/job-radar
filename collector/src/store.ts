@@ -49,15 +49,17 @@ export class Store {
     );
     if (data !== true) throw new Error(`${provider} credit budget exhausted.`);
   }
-  async saveCandidate(url: string, title?: string, company?: string) {
-    await this.checked(
-      this.db
-        .from("collector_candidates")
-        .upsert(
-          { url, title, company },
-          { onConflict: "url", ignoreDuplicates: true },
-        ),
-    );
+  async saveCandidates(
+    items: { url: string; title?: string; company?: string }[],
+  ) {
+    const rows = [...new Map(items.map((item) => [item.url, item])).values()];
+    for (let i = 0; i < rows.length; i += 100)
+      await this.checked(
+        this.db.from("collector_candidates").upsert(rows.slice(i, i + 100), {
+          onConflict: "url",
+          ignoreDuplicates: true,
+        }),
+      );
   }
   async candidates(limit: number, write = false) {
     const dayAgo = new Date(Date.now() - 86400000).toISOString();
@@ -68,7 +70,7 @@ export class Store {
       `and(status.eq.deferred,updated_at.lt.${dayAgo})`,
       `and(status.neq.pending,status.neq.deferred,updated_at.lt.${threeDaysAgo})`,
     ].join(",");
-    return (await this.checked(
+    const pending = (await this.checked(
       this.db
         .from("collector_candidates")
         .select("*")
@@ -76,6 +78,36 @@ export class Store {
         .order("updated_at", { ascending: true })
         .limit(limit),
     )) as Candidate[];
+    const cached = write
+      ? ((await this.checked(
+          this.db
+            .from("collector_candidates")
+            .select("*")
+            .eq("status", "shortlisted")
+            .is("published_at", null)
+            .eq("profile_version", "skills-v2")
+            .limit(limit),
+        )) as Candidate[])
+      : [];
+    const rank = (c: Candidate) =>
+      (c.status === "shortlisted" && !c.published_at ? 1000 : 0) +
+      (/jobs\.(lever|ashbyhq)\.com|(?:job-)?boards\.greenhouse\.io/.test(c.url)
+        ? 100
+        : 0) +
+      (/junior|intern|graduate|associate|trainee|entry/i.test(c.title ?? "")
+        ? 40
+        : 0) +
+      (/python|fastapi|generative|genai|llm|rag|agent|automation|ai engineer|backend/i.test(
+        c.title ?? "",
+      )
+        ? 1000
+        : 0) -
+      (/senior|staff|principal|director|head of|lead /i.test(c.title ?? "")
+        ? 80
+        : 0);
+    return [
+      ...new Map([...cached, ...pending].map((c) => [c.id, c])).values(),
+    ].sort((a, b) => rank(b) - rank(a));
   }
   async updateCandidate(id: string, values: Record<string, unknown>) {
     await this.checked(

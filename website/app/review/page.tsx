@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { backendRequest } from "@/lib/server/backend";
+import { backendRequest, localWorkspace } from "@/lib/server/backend";
 import { safeApplicationUrl } from "@job-radar/contracts";
 export default async function Review() {
   let candidates: Record<string, unknown>[] = [],
@@ -22,7 +22,7 @@ export default async function Review() {
       <h1>Collector and candidate review</h1>
       {error && (
         <p role="alert">
-          {error} <Link href="/login">Sign in</Link>
+          {error} {!localWorkspace() && <Link href="/login">Sign in</Link>}
         </p>
       )}
       <h2>Recent runs</h2>

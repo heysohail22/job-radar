@@ -1,5 +1,7 @@
 # Automatic job discovery
 
+Current setup: **local personal workspace, no sign-in**. Daily discovery is enabled for 09:00 Asia/Kolkata while the computer is available. Hosting and authentication remain deferred.
+
 Local TypeScript/LangGraph workflow using LangChain model adapters. It discovers
 employers automatically; no company watchlist is required from the owner.
 
@@ -106,3 +108,15 @@ Inspect `systemctl --user status job-radar-collector.timer` and
 
 The owner-only website /review page shows recent runs, candidate scores and
 reasons. Native job browsing/tracking uses the same backend once signed in.
+
+## Current local no-login mode
+
+The owner deferred authentication. `AUTH_MODE=local` is configured for backend
+and website. The backend remains bound to loopback and validates connection IP,
+Host and browser origins. Website matches, Saved and Applied tracking need no login.
+Mobile uses the personal backend automatically for loopback URLs (port 3001);
+public browsing with a future hosted URL still uses the protected/public split.
+Sign-in code is retained for later: use AUTH_MODE=owner in backend and website
+and EXPO_PUBLIC_AUTH_MODE=owner in mobile when ready. No public unauthenticated
+private endpoint is authorized. Earlier owner-sign-in setup instructions apply
+only when that mode is enabled. Existing owner account/data are preserved.

@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { localWorkspace } from "@/lib/server/backend";
 import Link from "next/link";
 import { login } from "./actions";
 export default async function Login({
@@ -5,6 +7,7 @@ export default async function Login({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  if (localWorkspace()) redirect("/");
   const { error } = await searchParams;
   return (
     <main

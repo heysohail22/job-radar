@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyRequest } from "fastify";
 import rateLimit from "@fastify/rate-limit";
 import {
   AppError,
@@ -8,17 +8,35 @@ import {
   type View,
 } from "@job-radar/contracts";
 import { database, feed, update, type Database } from "./database";
-export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
+export function buildApp(
+  options: {
+    db?: Database;
+    ownerId?: string;
+    authMode?: "owner" | "local";
+  } = {},
+) {
   const app = Fastify({
     bodyLimit: 8192,
     logger: false,
     requestTimeout: 30000,
   });
   const db = () => options.db ?? database();
+  const local =
+    (options.authMode ?? process.env.AUTH_MODE ?? "owner") === "local";
   const ownerId = () => options.ownerId ?? process.env.OWNER_USER_ID;
   app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
   app.addHook("onRequest", async (req, reply) => {
     reply.header("Cache-Control", "no-store");
+    if (
+      local &&
+      (!["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(req.ip) ||
+        !["localhost", "127.0.0.1", "[::1]"].includes(req.hostname) ||
+        req.headers["sec-fetch-site"] === "cross-site")
+    )
+      throw new AppError(
+        "Local workspace access requires a loopback connection.",
+        403,
+      );
     const origin = req.headers.origin;
     const allowed = (
       process.env.WEBSITE_ORIGINS ??
@@ -37,7 +55,9 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
         .code(204)
         .send();
   });
-  async function owner(token?: string) {
+  async function owner(req: FastifyRequest) {
+    if (local) return;
+    const token = req.headers.authorization;
     if (!ownerId())
       throw new AppError("Owner account has not been configured.", 503);
     if (!token?.startsWith("Bearer "))
@@ -75,6 +95,8 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     "/api/auth/login",
     { config: { rateLimit: { max: 8, timeWindow: "1 minute" } } },
     async (req) => {
+      if (local)
+        throw new AppError("Sign-in is disabled in local workspace mode.", 404);
       if (!ownerId())
         throw new AppError("Owner account has not been configured.", 503);
       const b = req.body as Record<string, unknown> | null;
@@ -103,6 +125,8 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     "/api/auth/refresh",
     { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } },
     async (req) => {
+      if (local)
+        throw new AppError("Sign-in is disabled in local workspace mode.", 404);
       const b = req.body as { refresh_token?: string };
       if (
         !b ||
@@ -123,12 +147,16 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     },
   );
   app.get("/api/auth/me", async (req) => {
-    await owner(req.headers.authorization);
-    return { owner: true };
+    await owner(req);
+    return { owner: true, mode: local ? "local" : "owner" };
   });
   app.post("/api/auth/logout", async (req) => {
-    await owner(req.headers.authorization);
-    await db().auth.admin.signOut(req.headers.authorization!.slice(7), "local");
+    await owner(req);
+    if (!local)
+      await db().auth.admin.signOut(
+        req.headers.authorization!.slice(7),
+        "local",
+      );
     return { ok: true };
   });
   app.get("/api/public/jobs", async (req) =>
@@ -153,7 +181,7 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     return result.jobs[0];
   });
   app.get("/api/jobs", async (req) => {
-    await owner(req.headers.authorization);
+    await owner(req);
     const p = new URL(req.url, "http://local").searchParams,
       view = p.get("view") ?? "discover";
     if (!["discover", "saved", "applications"].includes(view))
@@ -161,7 +189,7 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     return feed(db(), view as View, parseFilters(p));
   });
   app.get<{ Params: { id: string } }>("/api/jobs/:id", async (req) => {
-    await owner(req.headers.authorization);
+    await owner(req);
     if (!isUuid(req.params.id)) throw new AppError("Invalid job ID.", 400);
     const result = await feed(
       db(),
@@ -173,7 +201,7 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     return result.jobs[0];
   });
   app.patch<{ Params: { id: string } }>("/api/matches/:id", async (req) => {
-    await owner(req.headers.authorization);
+    await owner(req);
     if (!isUuid(req.params.id)) throw new AppError("Invalid match ID.", 400);
     return update(db(), req.params.id, parseMutation(req.body));
   });
@@ -181,7 +209,7 @@ export function buildApp(options: { db?: Database; ownerId?: string } = {}) {
     app.get(
       "/api/" + (table === "collector_runs" ? "runs" : "candidates"),
       async (req) => {
-        await owner(req.headers.authorization);
+        await owner(req);
         const { data, error } = await db()
           .from(table)
           .select(

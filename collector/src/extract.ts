@@ -116,6 +116,11 @@ async function directApi(url: string): Promise<Extracted | undefined> {
       url,
       description: htmlText(
         [
+          r.categories?.location ? `Location: ${r.categories.location}` : "",
+          r.categories?.commitment
+            ? `Employment type: ${r.categories.commitment}`
+            : "",
+          r.workplaceType ? `Work mode: ${r.workplaceType}` : "",
           r.description,
           ...(r.lists ?? []).map(
             (x: { text: string; content: string }) => x.text + " " + x.content,
@@ -137,7 +142,12 @@ async function directApi(url: string): Promise<Extracted | undefined> {
     );
     return {
       url,
-      description: htmlText(htmlText(r.content)),
+      description: [
+        r.location?.name ? `Location: ${r.location.name}` : "",
+        htmlText(htmlText(r.content)),
+      ]
+        .filter(Boolean)
+        .join("\n"),
       title: r.title,
       company: r.company_name,
       method: "greenhouse-api",
@@ -157,8 +167,14 @@ async function directApi(url: string): Promise<Extracted | undefined> {
     if (job)
       return {
         url,
-        description:
+        description: [
+          job.location ? `Location: ${job.location}` : "",
+          job.employmentType ? `Employment type: ${job.employmentType}` : "",
+          job.isRemote === true ? "Work mode: remote" : "",
           job.descriptionPlain ?? htmlText(job.descriptionHtml ?? ""),
+        ]
+          .filter(Boolean)
+          .join("\n"),
         title: job.title,
         method: "ashby-api",
       };
@@ -169,6 +185,16 @@ export async function extract(
   firecrawl?: (url: string) => Promise<string>,
 ): Promise<Extracted> {
   url = canonicalUrl(url);
+  const parsed = new URL(url);
+  if (
+    (parsed.hostname.endsWith("indeed.com") &&
+      /(?:-jobs\.html|\/jobs$)/.test(parsed.pathname)) ||
+    (parsed.hostname.endsWith("linkedin.com") &&
+      /\/jobs\/search/.test(parsed.pathname)) ||
+    (boardFromUrl(url) &&
+      parsed.pathname.split("/").filter(Boolean).length === 1)
+  )
+    throw new Error("Search/board index page is not a single job description.");
   await assertRobots(url);
   try {
     const r = await directApi(url);

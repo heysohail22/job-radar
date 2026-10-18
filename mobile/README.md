@@ -1,5 +1,7 @@
 # AI Job Radar mobile
 
+Current setup: **local personal workspace, no sign-in**. Daily discovery is enabled for 09:00 Asia/Kolkata while the computer is available. Hosting and authentication remain deferred.
+
 Native React Native app using Expo SDK 57, alongside the existing Next.js website. Discover and public job details read listings directly from Supabase over HTTPS using a publishable key. They need internet, but no computer, Metro, or login in the installed release APK. Signed-in scores, Saved and Activity use the owner-authenticated local backend.
 
 ## Run locally
@@ -89,3 +91,15 @@ localhost backend on port 3001. Run `pnpm backend`, then
 Use Account to sign in with the owner credentials; sessions use Expo SecureStore.
 The installed old APK does not update automatically: rebuild it to include the
 new SecureStore native module and application code. No hosted API is configured.
+
+## Current local no-login mode
+
+The owner deferred authentication. `AUTH_MODE=local` is configured for backend
+and website. The backend remains bound to loopback and validates connection IP,
+Host and browser origins. Website matches, Saved and Applied tracking need no login.
+Mobile uses the personal backend automatically for loopback URLs (port 3001);
+public browsing with a future hosted URL still uses the protected/public split.
+Sign-in code is retained for later: use AUTH_MODE=owner in backend and website
+and EXPO_PUBLIC_AUTH_MODE=owner in mobile when ready. No public unauthenticated
+private endpoint is authorized. Earlier owner-sign-in setup instructions apply
+only when that mode is enabled. Existing owner account/data are preserved.

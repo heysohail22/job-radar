@@ -1,5 +1,7 @@
 # Shared local backend
 
+Current setup: **local personal workspace, no sign-in**. Daily discovery is enabled for 09:00 Asia/Kolkata while the computer is available. Hosting and authentication remain deferred.
+
 The website and signed-in mobile app use this Fastify API. It listens only on
 127.0.0.1:3001. No hosting or publishing has been performed.
 
@@ -76,3 +78,15 @@ warnings remain for the legacy set_updated_at search path and disabled leaked-pa
 protection. Review these before future public hosting:
 https://supabase.com/docs/guides/database/database-linter?lint=0011_function_search_path_mutable
 https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+## Current local no-login mode
+
+The owner deferred authentication. `AUTH_MODE=local` is configured for backend
+and website. The backend remains bound to loopback and validates connection IP,
+Host and browser origins. Website matches, Saved and Applied tracking need no login.
+Mobile uses the personal backend automatically for loopback URLs (port 3001);
+public browsing with a future hosted URL still uses the protected/public split.
+Sign-in code is retained for later: use AUTH_MODE=owner in backend and website
+and EXPO_PUBLIC_AUTH_MODE=owner in mobile when ready. No public unauthenticated
+private endpoint is authorized. Earlier owner-sign-in setup instructions apply
+only when that mode is enabled. Existing owner account/data are preserved.

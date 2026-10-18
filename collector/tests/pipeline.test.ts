@@ -7,6 +7,7 @@ const jd =
   "Python is required. Build APIs. Remote from India. Experience preferred.";
 function analysis(): Analysis {
   return {
+    isSingleJob: true,
     title: "Developer",
     company: "Example",
     location: "India",
@@ -106,4 +107,25 @@ test("canonicalization deduplicates trackers without dropping job IDs and blocks
     provider: "lever",
     board: "example",
   });
+});
+
+test("Gemini schema converts nested nullable fields while local Zod validation still enforces types", async () => {
+  const { geminiSchema } = await import("../src/schema");
+  const { analysisSchema } = await import("../src/analysis");
+  const schema = geminiSchema(analysisSchema);
+  const properties = schema.properties as Record<
+    string,
+    Record<string, unknown>
+  >;
+  assert.equal(properties.location.type, "string");
+  assert.equal(properties.location.nullable, true);
+  const skillProperties = (properties.skills.items as Record<string, unknown>)
+    .properties as Record<string, Record<string, unknown>>;
+  assert.equal(skillProperties.profileSkill.type, "string");
+  assert.equal(skillProperties.profileSkill.nullable, true);
+  assert.equal(
+    analysisSchema.safeParse({ ...analysis(), minimumYears: "invented" })
+      .success,
+    false,
+  );
 });

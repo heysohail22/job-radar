@@ -117,3 +117,48 @@ test("stale revision conflicts remain conflicts; internal errors are not exposed
   await app.close();
   await f.app.close();
 });
+
+test("local mode needs no login but refuses remote connections, rebound hosts and cross-site requests", async () => {
+  const db = {
+    rpc: async () => ({
+      data: { jobs: [], total: 0, summary: {} },
+      error: null,
+    }),
+  } as unknown as Database;
+  const app = buildApp({ db, authMode: "local" });
+  assert.equal((await app.inject({ url: "/api/jobs" })).statusCode, 200);
+  assert.equal(
+    (await app.inject({ url: "/api/jobs", remoteAddress: "192.168.1.10" }))
+      .statusCode,
+    403,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        url: "/api/jobs",
+        headers: { host: "attacker.example" },
+      })
+    ).statusCode,
+    403,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        url: "/api/jobs",
+        headers: { "sec-fetch-site": "cross-site" },
+      })
+    ).statusCode,
+    403,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email: "test", password: "test" },
+      })
+    ).statusCode,
+    404,
+  );
+  await app.close();
+});

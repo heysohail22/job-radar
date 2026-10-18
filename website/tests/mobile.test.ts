@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import {
   configureSession,
   apiOrigin,
@@ -9,7 +9,9 @@ import {
 import { resolveTheme } from "../../mobile/src/theme";
 import type { Job } from "../lib/types";
 
+beforeEach(() => vi.stubEnv("EXPO_PUBLIC_AUTH_MODE", "owner"));
 afterEach(() => {
+  vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   configureSession(null, async () => {});
 });
@@ -159,5 +161,40 @@ describe("mobile API boundary", () => {
     expect(resolveTheme("system", null)).toBe("light");
     expect(resolveTheme("light", "dark")).toBe("light");
     expect(resolveTheme("dark", "light")).toBe("dark");
+  });
+});
+
+describe("local personal workspace", () => {
+  it("reads Saved without a session and retains public Discover when the computer is disconnected", async () => {
+    vi.stubEnv("EXPO_PUBLIC_AUTH_MODE", "local");
+    const filters = {
+      search: "",
+      mode: "all",
+      location: "",
+      minScore: 0,
+      posting: "all",
+      sort: "recent",
+      page: 1,
+      stage: "all",
+    };
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobs: [], total: 0, summary: { total: 0 } }),
+      })
+      .mockRejectedValueOnce(new TypeError("disconnected"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ jobs: [], total: 0, summary: { total: 0 } }),
+      });
+    vi.stubGlobal("fetch", fetcher);
+    await fetchFeed("saved", filters);
+    expect(fetcher.mock.calls[0][0]).toContain("127.0.0.1:3001/api/jobs");
+    expect(fetcher.mock.calls[0][1].headers.Authorization).toBeUndefined();
+    await fetchFeed("discover", filters);
+    expect(fetcher.mock.calls[2][0]).toContain(
+      "supabase.co/rest/v1/rpc/job_radar_public_feed",
+    );
   });
 });

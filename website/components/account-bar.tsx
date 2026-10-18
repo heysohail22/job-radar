@@ -1,8 +1,14 @@
 import Link from "next/link";
-import { signedIn } from "@/lib/server/backend";
+import { signedIn, localWorkspace } from "@/lib/server/backend";
 import { logout } from "@/app/login/actions";
 export async function AccountBar() {
   const personal = await signedIn();
+  if (localWorkspace())
+    return (
+      <div style={{ padding: "8px 20px", textAlign: "right" }}>
+        <Link href="/review">Collector &amp; needs checking</Link>
+      </div>
+    );
   return (
     <div
       style={{
