@@ -78,6 +78,10 @@ def extract_html(raw, url):
         ):
             if location:
                 metadata.append("Location: " + json.dumps(location, ensure_ascii=False))
+        if j.get("jobLocationType"):
+            metadata.append("Work mode: " + str(j["jobLocationType"]))
+        if j.get("employmentType"):
+            metadata.append("Employment type: " + str(j["employmentType"]))
         if j.get("applicantLocationRequirements"):
             metadata.append("Applicant location: " + json.dumps(j["applicantLocationRequirements"]))
         return dict(

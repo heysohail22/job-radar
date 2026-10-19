@@ -203,3 +203,39 @@ ENABLE_BROWSER=true in the ignored backend environment. All 14 Python tests pass
 including real sandboxed JS rendering and blocked private requests, POSTs and
 WebSockets. The local backend service was restarted successfully. The owner's
 COLLECTOR_ENABLED=false setting was preserved. No cloud deployment performed.
+
+## Live collection verification and reliability fixes
+
+A manual write collection was authorized. Provider budgets remained enforced even
+when Tavily's daily allowance was exhausted. Current employer pages supplemented
+stale search results; complete JDs were cached before analysis. Queue selection now
+mixes the backlog, recent discoveries and already-extracted pending descriptions,
+prioritizing relevant entry-level roles so fresh vacancies cannot be starved.
+
+Groq uses JSON mode with explicit schema instructions, mandatory local Pydantic
+validation and exact-source evidence checks. Its completion budget is configurable
+with GROQ_MAX_OUTPUT_TOKENS (default 4096); 2048 was used successfully with the
+available qwen/qwen3.8-27b model during this collection. Saved provider model choices
+are not changed by per-run overrides. GPT-OSS uses low reasoning effort. Validation
+retries identify unsupported evidence/profile references and provide actual source
+lines; they must never silently accept invented quotes or skills. Role analysis
+receives the skills/education/preferences profile, excluding search-title taxonomy.
+OR alternatives must be grouped, and semantic capability mappings remain constrained
+to approved profile skills. Mandatory experience gaps override an erroneous model
+entry label. Physical addresses alone do not establish onsite work. JSON-LD work
+mode and employment metadata are retained. All 19 Python tests including real
+Chromium verification passed. Scheduling remains disabled per owner configuration.
+
+Manual publication outcome: two real matches were published and read back through
+the shared mobile API and website API: TMLC GenAI Engineer (0 to 3yrs), score 100,
+and Nexvia Technologies Junior Python Developer, score 96. Both retain full JDs,
+source application URLs and application_status=new; nothing was applied for.
+Nexvia's work mode is unknown and posting status uncertain; do not claim it is
+verified remote/onsite or confirmed open. Scores are skills-fit, not hiring odds.
+Provider/search limits caused partial runs; scheduled collection remains off.
+
+## Match threshold — 19 October 2026
+
+The owner requested considering jobs with at least 70% skills-fit; a perfect match
+is not required. Collector shortlisting uses an inclusive score threshold of 70.
+Explicit eligibility blockers still reject; unknown requirements remain for review.

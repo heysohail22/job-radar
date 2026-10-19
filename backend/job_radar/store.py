@@ -55,6 +55,23 @@ class Store:
             limit="500",
             **{"or": "(" + ",".join(conditions) + ")"},
         )
+        # Mix recent discoveries with the backlog so fresh employer vacancies
+        # cannot be starved behind hundreds of old search/index pages.
+        recent = self.db.rows(
+            "collector_candidates",
+            select="*",
+            status="eq.pending",
+            order="updated_at.desc",
+            limit="500",
+        )
+        ready = self.db.rows(
+            "collector_candidates",
+            select="*",
+            status="eq.pending",
+            description="not.is.null",
+            order="updated_at.desc",
+            limit="100",
+        )
         cached = (
             self.db.rows(
                 "collector_candidates",
@@ -72,20 +89,25 @@ class Store:
             title = c.get("title") or ""
             return (
                 (1000 if c["status"] == "shortlisted" and not c.get("published_at") else 0)
+                + (200 if c.get("description") and len(c["description"]) >= 500 else 0)
                 + (
                     100
                     if re.search(r"jobs\.(lever|ashbyhq)\.com|boards\.greenhouse\.io", c["url"])
                     else 0
                 )
                 + (
-                    40
-                    if re.search(r"junior|intern|graduate|associate|trainee|entry", title, re.I)
+                    200
+                    if re.search(
+                        r"junior|intern|graduate|associate|trainee|entry|0\s*(?:-|–|to)\s*[123]",
+                        title,
+                        re.I,
+                    )
                     else 0
                 )
                 + (
                     1000
                     if re.search(
-                        r"python|fastapi|generative|genai|llm|rag|agent|automation|ai engineer|backend",
+                        r"python|fastapi|generative|genai|llm|rag|agent|automation|\bai\b|backend|software engineer|frontend",
                         title,
                         re.I,
                     )
@@ -98,7 +120,9 @@ class Store:
                 )
             )
 
-        return sorted({r["id"]: r for r in cached + rows}.values(), key=rank, reverse=True)
+        return sorted(
+            {r["id"]: r for r in cached + ready + recent + rows}.values(), key=rank, reverse=True
+        )
 
     def update_candidate(self, ident, values):
         self.db.patch("collector_candidates", {**values, "updated_at": now()}, id="eq." + ident)

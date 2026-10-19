@@ -137,3 +137,13 @@ Firecrawl; do not disable the sandbox to work around that restriction.
 
 Real offline browser integration verification (requires Chromium):
 `RUN_BROWSER_TESTS=1 uv run --directory backend pytest tests_python/test_browser.py`.
+
+## Free-model collection limits
+
+`GROQ_MAX_OUTPUT_TOKENS` defaults to 4096. A value of 2048 can fit smaller free-tier
+request budgets; incomplete model output is rejected, never published. Groq JSON
+output is validated locally with Pydantic and exact source evidence. Per-run model
+and token overrides do not change saved `.env` configuration. Recent discoveries
+and cached JDs are considered alongside the backlog to prevent queue starvation.
+Skills-fit scores describe the rubric, not a probability of being hired. A job's
+physical address alone is not evidence that the role is onsite.

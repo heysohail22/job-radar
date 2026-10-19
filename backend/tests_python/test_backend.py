@@ -378,3 +378,97 @@ def test_source_connection_rejects_dns_rebinding(monkeypatch):
             await resolver.close()
 
     asyncio.run(check())
+
+
+def test_fresh_relevant_employer_vacancy_is_not_starved_by_backlog():
+    from job_radar.store import Store
+
+    old = [
+        dict(
+            id=str(i),
+            url=f"https://example.com/{i}",
+            title="Senior Backend Engineer",
+            status="pending",
+        )
+        for i in range(500)
+    ]
+    fresh = dict(
+        id="fresh",
+        url="https://jobs.ashbyhq.com/employer/new-job",
+        title="AI Software Engineer Intern",
+        status="pending",
+    )
+
+    class QueueDb:
+        settings = Settings(_env_file=None)
+
+        def rows(self, table, **params):
+            return [fresh] if params["order"] == "updated_at.desc" else old
+
+    queued = Store(QueueDb()).candidates(False)
+    assert queued[0]["id"] == "fresh"
+    assert len(queued) == 501
+
+
+def test_groq_job_analysis_uses_json_mode_and_retries_unsupported_evidence(monkeypatch):
+    from langchain_groq import ChatGroq
+    from job_radar import models
+
+    payloads = []
+
+    def handler(req):
+        payload = json.loads(req.content)
+        payloads.append(payload)
+        assert payload["response_format"]["type"] == "json_object"
+        assert "isSingleJob" in payload["messages"][0]["content"]
+        assert "tools" not in payload
+        result = analysis().model_dump()
+        if len(payloads) == 1:
+            result["skills"][0]["evidence"] = "Unsupported invented quotation"
+        return httpx.Response(
+            200,
+            json={
+                "id": "test",
+                "object": "chat.completion",
+                "model": "openai/gpt-oss-120b",
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": json.dumps(result)},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 10, "total_tokens": 20},
+            },
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as http:
+        model = ChatGroq(api_key="test-key", model="openai/gpt-oss-120b", http_client=http)
+        monkeypatch.setattr(models, "available_models", lambda s: [model])
+        result = models.analyze(JD, Settings(_env_file=None))
+    assert result.skills[0].evidence == "Python" and len(payloads) == 2
+
+
+def test_model_entry_label_cannot_hide_a_mandatory_experience_gap():
+    a = analysis(experienceFit="entry", minimumYears=2, experienceMandatory=True)
+    result = score(a)
+    assert result["experience"] == 40 and result["total"] == 91
+
+
+def test_vague_background_does_not_become_invented_professional_experience_blocker():
+    text = JD + " Background in QA automation or developer productivity."
+    a = analysis(
+        mandatoryBlockers=[
+            {
+                "reason": "Professional background is missing",
+                "evidence": "Background in QA automation or developer productivity.",
+            }
+        ]
+    )
+    with pytest.raises(ValueError, match="incorrectly treated as a hard blocker"):
+        validate_evidence(a, text)
+
+
+def test_office_address_alone_does_not_establish_onsite_work():
+    a = analysis(workMode="onsite")
+    assert validate_evidence(a, JD).workMode == "unknown"

@@ -1,5 +1,6 @@
 import json
 import math
+import re
 from pathlib import Path
 from typing import Literal
 
@@ -53,13 +54,24 @@ def validate_evidence(a: Analysis, description: str):
         return " ".join(v.lower().split())
 
     body = norm(description)
+    mode_terms = {
+        "remote": r"\bremote\b|telecommut|work.from.home",
+        "hybrid": r"\bhybrid\b",
+        "onsite": r"on[ -]?site|in[ -]?person|in[ -]?office|work.from.office",
+    }
+    if a.workMode in mode_terms and not re.search(mode_terms[a.workMode], description, re.I):
+        a.workMode = "unknown"  # A physical office address alone does not prove onsite work.
     if not a.isSingleJob:
         raise ValueError("Analysis contains a listing page, not one job.")
     if not a.skills or not a.responsibilities:
         raise ValueError("Analysis contains insufficient requirements.")
-    for value in (a.compensation, a.experienceText, *a.degreeRequirements):
+    for field, value in [
+        ("compensation", a.compensation),
+        ("experienceText", a.experienceText),
+        *[("degreeRequirements", x) for x in a.degreeRequirements],
+    ]:
         if value and norm(value) not in body:
-            raise ValueError("Extracted facts must be verbatim JD text.")
+            raise ValueError(f"Extracted facts: {field} must be verbatim JD text or absent.")
     if a.currency and norm(a.currency) not in body:
         a.currency = None
     for field, unknown in (
@@ -71,10 +83,24 @@ def validate_evidence(a: Analysis, description: str):
             if unknown:
                 setattr(a, field, "")
             else:
-                raise ValueError("Analysis contains unsupported evidence.")
-    for item in [*a.skills, *a.responsibilities, *a.mandatoryBlockers]:
-        if norm(item.evidence) not in body:
-            raise ValueError("Analysis contains unsupported JD evidence.")
+                raise ValueError(
+                    f"Analysis contains unsupported {field}; copy a contiguous quote or classify unknown."
+                )
+    for group in ("skills", "responsibilities", "mandatoryBlockers"):
+        for index, item in enumerate(getattr(a, group)):
+            if norm(item.evidence) not in body:
+                raise ValueError(
+                    f"Analysis contains unsupported {group}[{index}].evidence; copy a short exact source quote."
+                )
+    for blocker in a.mandatoryBlockers:
+        if re.search(r"experience|background|skills", blocker.reason, re.I) and not re.search(
+            r"degree|licen[cs]e|authoriz|citizen|resident|visa|work permit|senior|lead|staff|principal|\d+\s*(?:[-–]\s*\d+)?\+?\s*years?",
+            blocker.evidence,
+            re.I,
+        ):
+            raise ValueError(
+                "Analysis contains a skills/background gap incorrectly treated as a hard blocker. Assess it in skills/responsibilities; do not invent professional experience requirements."
+            )
     approved = {norm(s) for s in PROFILE["skills"]}
     for item in [*a.skills, *a.responsibilities]:
         if (
@@ -112,8 +138,15 @@ def score(a: Analysis):
         )
 
     technical, role = dimension(a.skills), dimension(a.responsibilities)
+    experience_fit = a.experienceFit
+    if a.experienceMandatory and (a.minimumYears or 0) > PROFILE["professionalExperienceYears"]:
+        experience_fit = "senior" if a.minimumYears > 3 else "stretch"
+    elif (a.minimumYears or 0) > PROFILE[
+        "professionalExperienceYears"
+    ] and experience_fit == "entry":
+        experience_fit = "preferred-gap"
     experience = {"entry": 100, "preferred-gap": 75, "stretch": 40, "senior": 0, "unknown": 50}[
-        a.experienceFit
+        experience_fit
     ]
     total = rounding(technical * 0.6 + role * 0.25 + experience * 0.15)
     blocked = (
@@ -135,7 +168,7 @@ def score(a: Analysis):
         else "uncertain"
         if unknown
         else "shortlisted"
-        if total >= 60
+        if total >= 70
         else "rejected"
     )
     return dict(
@@ -149,6 +182,6 @@ def score(a: Analysis):
         else "Eligibility or required skills need checking."
         if unknown
         else "Meets the initial skills-fit threshold."
-        if total >= 60
+        if total >= 70
         else "Below the initial skills-fit threshold.",
     )

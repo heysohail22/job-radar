@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     firecrawl_api_key: SecretStr = SecretStr("")
     groq_api_key: SecretStr = SecretStr("")
     gemini_api_key: SecretStr = SecretStr("")
+    groq_max_output_tokens: int = Field(default=4096, ge=1024, le=8192)
     groq_model: str = "openai/gpt-oss-120b"
     gemini_model: str = "gemini-3.8-flash"
     tavily_daily_limit: int = Field(default=20, ge=0)
